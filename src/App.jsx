@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 
-const STORAGE_KEY = "thejourney_v1";
+const STORAGE_KEY = "thejourney_v2";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const ARCHETYPES = [
-  { id: "warrior", name: "El Guerrero", sub: "Disciplina · Fuerza · Acción", lore: "Tu poder nace de la constancia. No esperas la motivación — la creas.", icon: "⚔", aura: "#f97316", stat: { FUE: 8, INT: 5, SAB: 6, VIT: 9 }, bg: "radial-gradient(ellipse at 50% -10%, #f9731618 0%, transparent 65%)" },
-  { id: "sage", name: "El Sabio", sub: "Conocimiento · Claridad · Propósito", lore: "Tu fuerza es invisible pero ilimitada. La mente es tu arma más poderosa.", icon: "✦", aura: "#818cf8", stat: { FUE: 5, INT: 9, SAB: 8, VIT: 6 }, bg: "radial-gradient(ellipse at 50% -10%, #818cf818 0%, transparent 65%)" },
-  { id: "explorer", name: "El Explorador", sub: "Equilibrio · Aventura · Evolución", lore: "Tu camino no tiene un solo destino — tiene infinitos horizontes.", icon: "◎", aura: "#34d399", stat: { FUE: 7, INT: 7, SAB: 9, VIT: 7 }, bg: "radial-gradient(ellipse at 50% -10%, #34d39918 0%, transparent 65%)" },
+  { id: "warrior", name: "El Guerrero", sub: "Disciplina · Fuerza · Acción", lore: "Tu poder nace de la constancia. No esperas la motivación — la creas.", icon: "⚔", aura: "#ff4d00", aura2: "#ff7700", stat: { FUE: 8, INT: 5, SAB: 6, VIT: 9 }, bg: "radial-gradient(ellipse at 50% -10%, #ff4d0022 0%, transparent 65%)" },
+  { id: "sage", name: "El Sabio", sub: "Conocimiento · Claridad · Propósito", lore: "Tu fuerza es invisible pero ilimitada. La mente es tu arma más poderosa.", icon: "✦", aura: "#00e5ff", aura2: "#0080ff", stat: { FUE: 5, INT: 9, SAB: 8, VIT: 6 }, bg: "radial-gradient(ellipse at 50% -10%, #00e5ff22 0%, transparent 65%)" },
+  { id: "explorer", name: "El Explorador", sub: "Equilibrio · Aventura · Evolución", lore: "Tu camino no tiene un solo destino — tiene infinitos horizontes.", icon: "◎", aura: "#00ff9d", aura2: "#00cc7a", stat: { FUE: 7, INT: 7, SAB: 9, VIT: 7 }, bg: "radial-gradient(ellipse at 50% -10%, #00ff9d22 0%, transparent 65%)" },
 ];
 const STAGE_NAMES = ["El Desconocido", "El Aprendiz", "El Buscador", "El Forjado", "El Maestro"];
 const STAGE_LEVELS = [1, 11, 26, 51, 81];
@@ -24,6 +24,16 @@ const CONDITIONS = ["Diabetes", "Hipertensión", "Ansiedad", "Depresión", "Cole
 const GOALS = ["Perder peso", "Ganar músculo", "Reducir estrés", "Mejorar sueño", "Más energía", "Salud mental", "Más disciplina", "Comer mejor"];
 const MOODS = [{ e: "😔", l: "Bajo", v: 1 }, { e: "😐", l: "Regular", v: 2 }, { e: "🙂", l: "Bien", v: 3 }, { e: "😄", l: "Excelente", v: 4 }];
 const NAV = [{ id: "home", icon: "⌂", l: "Inicio" }, { id: "misiones", icon: "◈", l: "Misiones" }, { id: "metas", icon: "🎯", l: "Metas" }, { id: "salud", icon: "✦", l: "Salud" }, { id: "mente", icon: "◎", l: "Mente" }];
+
+// Shooting Star missions pool — random events
+const STAR_MISSIONS = [
+  { title: "¡Estrella Fugaz! Sal a caminar 10 min ahora", xp: 80, icon: "🌟" },
+  { title: "¡Estrella Fugaz! Bebe 2 vasos de agua YA", xp: 50, icon: "🌟" },
+  { title: "¡Estrella Fugaz! Haz 20 sentadillas ahora mismo", xp: 70, icon: "🌟" },
+  { title: "¡Estrella Fugaz! Respira profundo 5 veces", xp: 45, icon: "🌟" },
+  { title: "¡Estrella Fugaz! Escribe algo que te haga feliz", xp: 55, icon: "🌟" },
+  { title: "¡Estrella Fugaz! Estírate por 3 minutos ahora", xp: 60, icon: "🌟" },
+];
 const INTRO_SLIDES = [
   { icon: "⚡", title: "Sube de nivel en la vida real", desc: "Cada hábito que construyes suma XP. Tu personaje evoluciona cuando tú evolucionas. Tu vida, gamificada.", color: "#f97316" },
   { icon: "🎭", title: "Tu avatar crece contigo", desc: "Empieza como El Desconocido. Con constancia alcanza El Maestro. Cinco etapas de evolución visual.", color: "#818cf8" },
@@ -46,12 +56,12 @@ function load() {
 }
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
-function HeroAvatar({ archetype, level = 1, size = 200, animate = true, mood = 3, darkDay = false }) {
+function HeroAvatar({ archetype, level = 1, size = 200, animate = true, mood = 3, darkDay = false, showFuture = false }) {
   const a = ARCHETYPES.find(x => x.id === archetype) || ARCHETYPES[0];
   const stage = STAGE_LEVELS.findLastIndex(l => level >= l);
   const marks = { warrior: "⚔", sage: "✦", explorer: "◎" };
-  const li = darkDay ? 0.08 : Math.min(0.2 + stage * 0.1 + level * 0.005, 0.75);
-  const bl = darkDay ? 0.05 : Math.min(0.14 + stage * 0.07, 0.45);
+  const li = darkDay ? 0.08 : Math.min(0.25 + stage * 0.12 + level * 0.006, 0.85);
+  const bl = darkDay ? 0.05 : Math.min(0.18 + stage * 0.08, 0.55);
   const ac = darkDay ? "#4b5563" : a.aura;
   const eyeH = mood <= 1 ? 2.5 : mood >= 4 ? 4.5 : 3.8;
   const eyeW = mood <= 1 ? 4 : mood >= 4 ? 3.2 : 3.5;
@@ -93,13 +103,35 @@ function HeroAvatar({ archetype, level = 1, size = 200, animate = true, mood = 3
       <ellipse cx="110" cy="115" rx="74" ry="90" fill={`url(#BL-${archetype}-${level}-${darkDay})`} style={animate ? { animation: darkDay ? "dark-breathe 6s ease-in-out infinite" : "aura-breathe 4s ease-in-out infinite" } : {}} />
       <ellipse cx="110" cy="202" rx={46 + stage * 10} ry={11 + stage * 3} fill={`url(#GL-${archetype}-${level})`} style={animate ? { animation: "ground-pulse 3s ease-in-out infinite" } : {}} />
 
+      {/* ── FUTURE SELF SILHOUETTE ── translucent ghost of max level */}
+      {showFuture && !darkDay && (
+        <g opacity="0.13" style={{ animation: "future-pulse 4s ease-in-out infinite" }}>
+          {/* Future silhouette — larger, more imposing */}
+          <ellipse cx="110" cy="118" rx="88" ry="106" fill={ac} fillOpacity="0.06" />
+          <rect x="76" y="150" width="20" height="50" rx="10" fill={ac} />
+          <rect x="124" y="150" width="20" height="50" rx="10" fill={ac} />
+          <rect x="70" y="98" width="80" height="60" rx="16" fill={ac} />
+          <ellipse cx="70" cy="112" rx="16" ry="13" fill={ac} />
+          <ellipse cx="150" cy="112" rx="16" ry="13" fill={ac} />
+          <rect x="52" y="108" width="18" height="52" rx="9" fill={ac} />
+          <rect x="150" y="108" width="18" height="52" rx="9" fill={ac} />
+          <rect x="98" y="86" width="24" height="18" rx="9" fill={ac} />
+          <ellipse cx="110" cy="70" rx="32" ry="34" fill={ac} />
+          {/* Crown */}
+          <ellipse cx="110" cy="36" rx="34" ry="12" fill={ac} />
+          {/* Orbit rings */}
+          <ellipse cx="110" cy="110" rx="112" ry="112" stroke={ac} strokeWidth="1" fill="none" />
+          <ellipse cx="110" cy="110" rx="98" ry="98" stroke={ac} strokeWidth="0.5" fill="none" />
+        </g>
+      )}
+
       {darkDay && animate && [30, 70, 110, 150, 190, 50, 90, 130, 170].map((x, i) => (
         <rect key={i} x={x} y={-10} width="1.2" height="8" rx="1" fill="#4b5563" opacity="0.35"
           style={{ animation: `rain-fall ${1.2 + (i % 4) * 0.3}s ${i * 0.18}s linear infinite` }} />
       ))}
 
-      {stage >= 3 && !darkDay && <ellipse cx="110" cy="110" rx="108" ry="108" stroke={ac} strokeWidth="0.7" fill="none" opacity="0.2" style={{ animation: "ring-spin 14s linear infinite" }} />}
-      {stage >= 4 && !darkDay && <ellipse cx="110" cy="110" rx="96" ry="96" stroke={ac} strokeWidth="0.4" fill="none" opacity="0.12" style={{ animation: "ring-spin 9s linear infinite reverse" }} />}
+      {stage >= 3 && !darkDay && <ellipse cx="110" cy="110" rx="108" ry="108" stroke={ac} strokeWidth="0.7" fill="none" opacity="0.25" style={{ animation: "ring-spin 14s linear infinite" }} />}
+      {stage >= 4 && !darkDay && <ellipse cx="110" cy="110" rx="96" ry="96" stroke={ac} strokeWidth="0.4" fill="none" opacity="0.15" style={{ animation: "ring-spin 9s linear infinite reverse" }} />}
 
       <rect x="84" y="157" width="17" height="42" rx="8.5" fill="#131325" />
       <rect x="119" y="157" width="17" height="42" rx="8.5" fill="#131325" />
@@ -176,7 +208,7 @@ function XPBar({ xp, xpNext, color, label = true }) {
 }
 
 function Card({ children, style = {}, glow }) {
-  return <div style={{ background: "#0d1020", border: `1px solid ${glow ? glow + "40" : "#1a2035"}`, borderRadius: 16, padding: "16px 18px", marginBottom: 12, boxShadow: glow ? `0 0 28px ${glow}14` : "none", ...style }}>{children}</div>;
+  return <div style={{ background: "#0d1428", border: `1px solid ${glow ? glow + "50" : "#1a2540"}`, borderRadius: 16, padding: "16px 18px", marginBottom: 12, boxShadow: glow ? `0 0 28px ${glow}22, 0 0 1px ${glow}` : "none", ...style }}>{children}</div>;
 }
 
 function Pill({ label, active, color, onClick }) {
@@ -402,6 +434,9 @@ export default function App() {
   const breathRef = useRef(null);
   const [breathActive, setBreathActive] = useState(false);
   const [breathPhase, setBreathPhase] = useState("inhala");
+  const [starMission, setStarMission] = useState(null);
+  const [starTimer, setStarTimer] = useState(0);
+  const starIntervalRef = useRef(null);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -421,6 +456,24 @@ export default function App() {
     if (step < 5 && !player) return;
     save({ profile, player, missions, customGoals, water, moodLog });
   }, [profile, player, missions, customGoals, water, moodLog]);
+
+  // Shooting Star — spawn randomly every 8-15 min, lasts 90 seconds
+  useEffect(() => {
+    if (!player) return;
+    const spawnDelay = (8 + Math.random() * 7) * 60 * 1000;
+    const spawnTimeout = setTimeout(() => {
+      const mission = STAR_MISSIONS[Math.floor(Math.random() * STAR_MISSIONS.length)];
+      setStarMission(mission);
+      setStarTimer(90);
+      starIntervalRef.current = setInterval(() => {
+        setStarTimer(t => {
+          if (t <= 1) { clearInterval(starIntervalRef.current); setStarMission(null); return 0; }
+          return t - 1;
+        });
+      }, 1000);
+    }, spawnDelay);
+    return () => { clearTimeout(spawnTimeout); clearInterval(starIntervalRef.current); };
+  }, [player?.level]);
 
   const arc = ARCHETYPES.find(a => a.id === (profile.archetype || player?.archetype || "explorer"));
   const lowMoodStreak = moodLog.length >= 3 && moodLog.slice(-3).every(m => m.v <= 1);
@@ -512,7 +565,7 @@ export default function App() {
 
   // ── SETUP ──────────────────────────────────────────────────────────────────
   if (step < 5) return (
-    <div style={{ minHeight: "100vh", background: "#07080f", display: "flex", alignItems: "flex-start", justifyContent: "center", fontFamily: "'DM Sans',sans-serif", color: "#e2e8f0", padding: "32px 16px 60px", overflowY: "auto" }}>
+    <div style={{ minHeight: "100vh", background: "#0a0f1e", display: "flex", alignItems: "flex-start", justifyContent: "center", fontFamily: "'DM Sans',sans-serif", color: "#e2e8f0", padding: "32px 16px 60px", overflowY: "auto" }}>
       <div style={{ position: "fixed", top: "15%", left: "50%", transform: "translateX(-50%)", width: 360, height: 360, borderRadius: "50%", background: `radial-gradient(circle, ${arc.aura}07, transparent 70%)`, pointerEvents: "none" }} />
       {showIntro && <IntroSlider onDone={() => setShowIntro(false)} />}
       {showDisclaimer && <MedDisclaimer onAccept={() => { setShowDisclaimer(false); setStep(5); setShowTutorial(true); }} />}
@@ -614,7 +667,7 @@ export default function App() {
   // MAIN APP
   // ══════════════════════════════════════════════════════════════════════════
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#07080f", fontFamily: "'DM Sans',sans-serif", color: "#e2e8f0", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: "#0a0f1e", fontFamily: "'DM Sans',sans-serif", color: "#e2e8f0", overflow: "hidden" }}>
       {showLevelUp && <LevelUpToast level={newLevel} arc={arc} archetype={player.archetype} onDone={() => setShowLevelUp(false)} />}
       {showTutorial && <Tutorial onDone={() => setShowTutorial(false)} />}
       {showDarkDay && <DarkDayScreen arc={arc} archetype={player.archetype} playerName={player.name} onMission={(xp) => addXP(xp)} onDismiss={() => setShowDarkDay(false)} />}
@@ -622,7 +675,7 @@ export default function App() {
       {xpBurst && <XPBurst xp={xpBurst.xp} color={arc.aura} onDone={() => setXpBurst(null)} />}
 
       {/* Sidebar */}
-      <nav style={{ width: 60, background: "#0a0c18", borderRight: "1px solid #111828", display: "flex", flexDirection: "column", alignItems: "center", padding: "12px 0", gap: 2, flexShrink: 0 }}>
+      <nav style={{ width: 60, background: "#070c18", borderRight: "1px solid #1a2540", display: "flex", flexDirection: "column", alignItems: "center", padding: "12px 0", gap: 2, flexShrink: 0 }}>
         <div style={{ fontSize: 15, color: arc.aura, fontFamily: "'Cinzel',serif", marginBottom: 12 }}>◈</div>
         {NAV.map(n => (
           <button key={n.id} onClick={() => setTab(n.id)} style={{ width: 46, height: 50, border: "none", borderRadius: 11, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, background: tab === n.id ? arc.aura + "18" : "transparent", color: tab === n.id ? arc.aura : "#2d3a52", transition: "all 0.2s", fontFamily: "inherit" }}>
@@ -646,7 +699,7 @@ export default function App() {
             <div style={{ position: "relative", background: arc.bg, borderBottom: `1px solid ${arc.aura}18`, padding: "22px 18px 0", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: `radial-gradient(circle,${arc.aura}0a,transparent 70%)`, pointerEvents: "none" }} />
               <div style={{ display: "flex", alignItems: "flex-end", gap: 6, maxWidth: 660, margin: "0 auto" }}>
-                <div style={{ flexShrink: 0, marginBottom: -10 }}><HeroAvatar archetype={player.archetype} level={player.level} size={162} animate mood={currentMood} /></div>
+                <div style={{ flexShrink: 0, marginBottom: -10 }}><HeroAvatar archetype={player.archetype} level={player.level} size={162} animate mood={currentMood} showFuture={true} /></div>
                 <div style={{ flex: 1, paddingBottom: 22, paddingLeft: 6 }}>
                   <div style={{ fontSize: 9, color: arc.aura, letterSpacing: 4, textTransform: "uppercase", marginBottom: 3 }}>{getStageName(player.level)}</div>
                   <h1 style={{ fontFamily: "'Cinzel',serif", fontSize: 20, color: "#f8fafc", letterSpacing: 1, marginBottom: 2 }}>{player.name}</h1>
@@ -662,6 +715,31 @@ export default function App() {
             </div>
 
             <div style={{ maxWidth: 660, margin: "0 auto", padding: "14px 15px 32px" }}>
+
+              {/* ── SHOOTING STAR MISSION ── */}
+              {starMission && (
+                <div style={{ background: "linear-gradient(135deg, #1a1400, #0a0f00)", border: "1.5px solid #ffd700", borderRadius: 16, padding: "14px 18px", marginBottom: 14, boxShadow: "0 0 24px #ffd70044, 0 0 48px #ffd70018", animation: "star-pulse 2s ease-in-out infinite", position: "relative", overflow: "hidden" }}>
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent, #ffd70008, transparent)", animation: "star-sweep 2s linear infinite", pointerEvents: "none" }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ fontSize: 28, filter: "drop-shadow(0 0 8px #ffd700)" }}>🌟</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 9, color: "#ffd700", letterSpacing: 3, marginBottom: 3 }}>MISIÓN ESTRELLA FUGAZ · {starTimer}s</div>
+                      <div style={{ fontSize: 13, color: "#fff9c4", fontWeight: 600, lineHeight: 1.4 }}>{starMission.title}</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 14, color: "#ffd700", fontWeight: 800, fontFamily: "'Cinzel',serif" }}>+{starMission.xp}</div>
+                      <div style={{ fontSize: 9, color: "#ffd70088" }}>XP</div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 10, height: 3, background: "#1a1400", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${(starTimer / 90) * 100}%`, background: "linear-gradient(90deg, #ffd70088, #ffd700)", borderRadius: 2, transition: "width 1s linear", boxShadow: "0 0 8px #ffd700" }} />
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <button onClick={() => { addXP(starMission.xp); setStarMission(null); clearInterval(starIntervalRef.current); }} style={{ flex: 2, background: "#ffd700", border: "none", borderRadius: 9, padding: "9px", color: "#000", fontFamily: "'Cinzel',serif", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>¡Completar! +{starMission.xp} XP</button>
+                    <button onClick={() => { setStarMission(null); clearInterval(starIntervalRef.current); }} style={{ flex: 1, background: "transparent", border: "1px solid #ffd70033", borderRadius: 9, padding: "9px", color: "#ffd70066", cursor: "pointer", fontSize: 11, fontFamily: "inherit" }}>Omitir</button>
+                  </div>
+                </div>
+              )}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 12 }}>
                 {[
                   { icon: "⚖️", val: bmi || "—", label: "IMC", badge: bmiLabel || "—", c: bmiColor },
@@ -990,33 +1068,33 @@ export default function App() {
 }
 
 const S = {
-  btn: { width: "100%", background: "#34d399", border: "none", borderRadius: 12, padding: "14px", color: "#000", fontFamily: "'Cinzel',serif", fontWeight: 800, fontSize: 13, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" },
-  setupCard: { background: "#0d1020", border: "1px solid #1a2035", borderRadius: 20, padding: "36px 28px" },
-  badge: { fontSize: 9, color: "#2d3a52", letterSpacing: 5, textTransform: "uppercase", marginBottom: 12 },
-  stitle: { fontFamily: "'Cinzel',serif", fontSize: 22, color: "#f8fafc", letterSpacing: 2, marginBottom: 8 },
+  btn: { width: "100%", background: "#00ff9d", border: "none", borderRadius: 12, padding: "14px", color: "#000", fontFamily: "'Cinzel',serif", fontWeight: 800, fontSize: 13, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s", boxShadow: "0 0 20px #00ff9d44" },
+  setupCard: { background: "#0d1428", border: "1px solid #1a2f50", borderRadius: 20, padding: "36px 28px" },
+  badge: { fontSize: 9, color: "#1a3050", letterSpacing: 5, textTransform: "uppercase", marginBottom: 12 },
+  stitle: { fontFamily: "'Cinzel',serif", fontSize: 22, color: "#ffffff", letterSpacing: 2, marginBottom: 8 },
   ssub: { fontSize: 13, color: "#8892a4", marginBottom: 22, lineHeight: 1.7 },
-  label: { display: "block", fontSize: 10, color: "#4b5563", letterSpacing: 2, textTransform: "uppercase", marginBottom: 7 },
-  input: { width: "100%", background: "#07080f", border: "1px solid #111828", borderRadius: 10, padding: "11px 13px", fontSize: 13, color: "#e2e8f0", outline: "none", fontFamily: "inherit", boxSizing: "border-box" },
-  waterBtn: { flex: 1, background: "#111828", border: "1px solid #1a2035", borderRadius: 8, padding: "8px", color: "#6b7a96", cursor: "pointer", fontSize: 12, fontFamily: "inherit" },
+  label: { display: "block", fontSize: 10, color: "#4b5a72", letterSpacing: 2, textTransform: "uppercase", marginBottom: 7 },
+  input: { width: "100%", background: "#070c18", border: "1px solid #1a2540", borderRadius: 10, padding: "11px 13px", fontSize: 13, color: "#ffffff", outline: "none", fontFamily: "inherit", boxSizing: "border-box" },
+  waterBtn: { flex: 1, background: "#0d1428", border: "1px solid #1a2540", borderRadius: 8, padding: "8px", color: "#6b7a96", cursor: "pointer", fontSize: 12, fontFamily: "inherit" },
   page: { maxWidth: 660, margin: "0 auto", padding: "24px 16px 40px" },
-  ptitle: { fontFamily: "'Cinzel',serif", fontSize: 22, color: "#f8fafc", letterSpacing: 2, marginBottom: 6 },
+  ptitle: { fontFamily: "'Cinzel',serif", fontSize: 22, color: "#ffffff", letterSpacing: 2, marginBottom: 6 },
   psub: { fontSize: 13, color: "#8892a4", marginBottom: 20 },
-  section: { fontSize: 9, color: "#2d3a52", letterSpacing: 3, textTransform: "uppercase", marginBottom: 12, marginTop: 22, paddingBottom: 8, borderBottom: "1px solid #0a0d1a" },
+  section: { fontSize: 9, color: "#1a3050", letterSpacing: 3, textTransform: "uppercase", marginBottom: 12, marginTop: 22, paddingBottom: 8, borderBottom: "1px solid #0d1428" },
 };
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:#07080f;margin:0;}
+  body{background:#0a0f1e;margin:0;}
   ::-webkit-scrollbar{width:3px;}
-  ::-webkit-scrollbar-thumb{background:#111828;border-radius:3px;}
-  input::placeholder{color:#1a2035;}
-  button:hover{filter:brightness(1.1);}
-  @keyframes aura-breathe{0%,100%{opacity:0.85;transform:scale(1);}50%{opacity:1;transform:scale(1.06);}}
+  ::-webkit-scrollbar-thumb{background:#1a2540;border-radius:3px;}
+  input::placeholder{color:#1a2540;}
+  button:hover{filter:brightness(1.15);}
+  @keyframes aura-breathe{0%,100%{opacity:0.85;transform:scale(1);}50%{opacity:1;transform:scale(1.08);}}
   @keyframes dark-breathe{0%,100%{opacity:0.4;transform:scale(0.97);}50%{opacity:0.6;transform:scale(1);}}
-  @keyframes ground-pulse{0%,100%{opacity:0.7;}50%{opacity:1;transform:scaleX(1.08);}}
+  @keyframes ground-pulse{0%,100%{opacity:0.7;}50%{opacity:1;transform:scaleX(1.1);}}
   @keyframes ring-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-  @keyframes float-p{0%{transform:translateY(0);opacity:0.22;}100%{transform:translateY(-10px);opacity:0.42;}}
+  @keyframes float-p{0%{transform:translateY(0);opacity:0.3;}100%{transform:translateY(-12px);opacity:0.55;}}
   @keyframes rain-fall{0%{transform:translateY(-20px);opacity:0;}10%{opacity:0.4;}90%{opacity:0.4;}100%{transform:translateY(110vh);opacity:0;}}
   @keyframes rain-streak{0%{transform:translateY(-100%);opacity:0;}5%{opacity:1;}95%{opacity:0.6;}100%{transform:translateY(200%);opacity:0;}}
   @keyframes expand{0%{transform:scale(1);}100%{transform:scale(1.3);}}
@@ -1027,6 +1105,10 @@ const CSS = `
   @keyframes slide-up{from{transform:translateY(100%);}to{transform:translateY(0);}}
   @keyframes xp-burst{0%{opacity:0;transform:translate(-50%,-50%) scale(0.5);}30%{opacity:1;transform:translate(-50%,-80%) scale(1.2);}70%{opacity:1;transform:translate(-50%,-120%) scale(1);}100%{opacity:0;transform:translate(-50%,-160%) scale(0.8);}}
   @keyframes pulse-soft{0%,100%{opacity:0.6;}50%{opacity:1;}}
+  @keyframes future-pulse{0%,100%{opacity:0.13;}50%{opacity:0.22;}}
+  @keyframes star-pulse{0%,100%{box-shadow:0 0 24px #ffd70044,0 0 48px #ffd70018;}50%{box-shadow:0 0 36px #ffd70066,0 0 72px #ffd70030;}}
+  @keyframes star-sweep{0%{transform:translateX(-100%);}100%{transform:translateX(400%);}}
+  @keyframes neon-flicker{0%,95%,100%{opacity:1;}96%{opacity:0.8;}97%{opacity:1;}98%{opacity:0.9;}}
   @media(max-width:600px){
     div[style*="repeat(4,1fr)"]{grid-template-columns:1fr 1fr!important;}
     div[style*="auto-fit, minmax(240"]{grid-template-columns:1fr!important;}
