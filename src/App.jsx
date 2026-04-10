@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 
-const STORAGE_KEY = "thejourney_v5";
+const STORAGE_KEY = "thejourney_v6";
 
 const C = {
   bg:"#0F172A", card:"#1E293B", border:"#334155",
@@ -8,61 +8,77 @@ const C = {
   text:"#F1F5F9", muted:"#64748B", cta:"#F97316",
 };
 
-// ─── WORLD MAP STAGES ─────────────────────────────────────────────
 const MAP_STAGES = [
-  { id:"origin",   label:"Origen",       sublabel:"El inicio",         minLevel:1,  icon:"🌑", color:"#64748B", unlockMsg:"El viaje comienza aquí." },
-  { id:"dawn",     label:"Despertar",    sublabel:"Primera luz",       minLevel:3,  icon:"🌅", color:"#F59E0B", unlockMsg:"Despertaste. La luz guía tu camino." },
-  { id:"forge",    label:"La Forja",     sublabel:"Temple de acero",   minLevel:6,  icon:"🔥", color:"#F97316", unlockMsg:"Entraste a la Forja. Aquí se templará tu voluntad." },
-  { id:"warrior",  label:"El Guerrero",  sublabel:"Poder forjado",     minLevel:10, icon:"⚔", color:"#EF4444", unlockMsg:"¡Guerrero! Tu disciplina es innegable." },
-  { id:"ascent",   label:"Ascensión",    sublabel:"Más allá del límite",minLevel:15, icon:"✦", color:"#8B5CF6", unlockMsg:"Ascendiste. Pocos llegan tan lejos." },
-  { id:"star",     label:"Estelar",      sublabel:"Entre las estrellas",minLevel:20, icon:"⭐", color:"#06B6D4", unlockMsg:"Alcanzaste el plano estelar." },
-  { id:"legend",   label:"Leyenda",      sublabel:"Inmortal",          minLevel:30, icon:"👑", color:"#F59E0B", unlockMsg:"LEYENDA. Tu nombre quedará grabado." },
+  { id:"origin",  label:"Origen",      sublabel:"El inicio",            minLevel:1,  icon:"🌑", color:"#64748B", unlockMsg:"El viaje comienza aquí. Todo héroe empieza en la oscuridad." },
+  { id:"dawn",    label:"Despertar",   sublabel:"Primera luz",          minLevel:4,  icon:"🌅", color:"#F59E0B", unlockMsg:"Despertaste. Los primeros pasos son los más importantes." },
+  { id:"forge",   label:"La Forja",    sublabel:"Temple de acero",      minLevel:8,  icon:"🔥", color:"#F97316", unlockMsg:"Entraste a la Forja. Aquí se forjan las leyendas." },
+  { id:"warrior", label:"El Guerrero", sublabel:"Poder forjado",        minLevel:12, icon:"⚔",  color:"#EF4444", unlockMsg:"¡GUERRERO! Tu disciplina es innegable." },
+  { id:"ascent",  label:"Ascensión",   sublabel:"Más allá del límite",  minLevel:18, icon:"✦",  color:"#8B5CF6", unlockMsg:"Solo el 1% de los viajeros llega aquí." },
+  { id:"stellar", label:"Estelar",     sublabel:"Entre las estrellas",  minLevel:25, icon:"⭐", color:"#06B6D4", unlockMsg:"¡ESTELAR! Navegas entre galaxias." },
+  { id:"legend",  label:"Leyenda",     sublabel:"Inmortal",             minLevel:35, icon:"👑", color:"#F59E0B", unlockMsg:"LEYENDA VIVIENTE. Pocos llegan. Tú lo lograste." },
 ];
 
-// ─── ACHIEVEMENTS ─────────────────────────────────────────────────
-const ACHIEVEMENTS = [
-  // Fáciles
-  { id:"first_step",    icon:"👣", title:"Primer Paso",        desc:"Completa tu primera misión",              check:(s)=>s.totalMissions>=1 },
-  { id:"hydrated",      icon:"💧", title:"Bebedor Legendario", desc:"Completa el tanque de agua un día",       check:(s)=>s.waterCompleted>=1 },
-  { id:"level3",        icon:"⭐", title:"Viajero Estelar",    desc:"Alcanza el nivel 3",                     check:(s)=>s.level>=3 },
-  { id:"streak3",       icon:"🔥", title:"3 en Raya",          desc:"Mantén una racha de 3 días",             check:(s)=>s.streak>=3 },
-  { id:"first_epic",    icon:"🔥", title:"El Primer Fuego",    desc:"Completa tu primera misión épica",       check:(s)=>s.epicDone },
-  { id:"all_missions",  icon:"✅", title:"Día Perfecto",       desc:"Completa todas las misiones en un día",  check:(s)=>s.dayPerfect>=1 },
-  { id:"early_riser",   icon:"🌅", title:"Madrugador",         desc:"Registra ánimo por 5 días seguidos",     check:(s)=>s.moodDays>=5 },
-  // Medios
-  { id:"level10",       icon:"⚔", title:"El Guerrero",        desc:"Alcanza el nivel 10",                    check:(s)=>s.level>=10 },
-  { id:"streak7",       icon:"🗓", title:"Semana Imparable",   desc:"7 días de racha",                        check:(s)=>s.streak>=7 },
-  { id:"xp500",         icon:"⚡", title:"500 XP Acumulados",  desc:"Acumula 500 XP en total",                check:(s)=>s.totalXP>=500 },
-  { id:"water10",       icon:"🌊", title:"Ola de Hidratación", desc:"Completa el tanque 10 días",             check:(s)=>s.waterCompleted>=10 },
-  { id:"attrs50",       icon:"💪", title:"Polivalente",        desc:"Suma 50 puntos entre todos los atributos",check:(s)=>(s.attrs.FUE+s.attrs.SAB+s.attrs.VOL)>=50 },
-  // Difíciles
-  { id:"level20",       icon:"✦",  title:"Leyenda Viviente",   desc:"Alcanza el nivel 20",                    check:(s)=>s.level>=20 },
-  { id:"streak30",      icon:"👑", title:"El Mes Perfecto",    desc:"30 días de racha",                       check:(s)=>s.streak>=30 },
-  { id:"xp2000",        icon:"🌌", title:"Maestro del Viaje",  desc:"Acumula 2000 XP en total",               check:(s)=>s.totalXP>=2000 },
-];
-
-const STREAK_REWARDS = [
-  { day:7,  reward:"+100 XP bonus",    icon:"🎁", xp:100 },
-  { day:14, reward:"+200 XP bonus",    icon:"💎", xp:200 },
-  { day:30, reward:"+500 XP LEGENDARIO",icon:"👑", xp:500 },
+const ARTIFACTS = [
+  { id:"warrior_helmet",   name:"Casco del Guerrero",      icon:"🪖", attr:"FUE", bonus:5,  minLevel:5,  color:"#EF4444", desc:"Forjado en mil entrenamientos." },
+  { id:"titan_gloves",     name:"Guantes de Titán",        icon:"🥊", attr:"FUE", bonus:8,  minLevel:12, color:"#F97316", desc:"Cada golpe resuena en el cosmos." },
+  { id:"steel_chestplate", name:"Coraza de Acero",         icon:"🛡",  attr:"FUE", bonus:12, minLevel:20, color:"#EF4444", desc:"Impenetrable. Como tu disciplina." },
+  { id:"visionary_glasses",name:"Gafas de Visionario",     icon:"🥽", attr:"SAB", bonus:5,  minLevel:5,  color:"#10B981", desc:"Ven lo que otros no pueden ver." },
+  { id:"ancient_book",     name:"Libro Antiguo",           icon:"📜", attr:"SAB", bonus:8,  minLevel:12, color:"#06B6D4", desc:"Siglos de sabiduría en tus manos." },
+  { id:"knowledge_amulet", name:"Amuleto del Conocimiento",icon:"🔮", attr:"SAB", bonus:12, minLevel:20, color:"#10B981", desc:"La mente que nunca deja de crecer." },
+  { id:"resilience_cape",  name:"Capa de Resiliencia",     icon:"🌊", attr:"VOL", bonus:5,  minLevel:5,  color:"#8B5CF6", desc:"Ante los vientos más fuertes, tú permaneces." },
+  { id:"determination_ring",name:"Anillo de Determinación",icon:"💍", attr:"VOL", bonus:8,  minLevel:12, color:"#A78BFA", desc:"Tu voluntad no tiene fin." },
+  { id:"focus_bracelet",   name:"Brazalete de Enfoque",    icon:"⌚", attr:"VOL", bonus:12, minLevel:20, color:"#8B5CF6", desc:"Concentración absoluta." },
 ];
 
 const MISSION_ATTRS = {
-  1:{FUE:3,SAB:0,VOL:2}, 2:{FUE:0,SAB:2,VOL:3}, 3:{FUE:1,SAB:0,VOL:1},
-  4:{FUE:0,SAB:4,VOL:1}, 5:{FUE:0,SAB:2,VOL:4}, 6:{FUE:2,SAB:1,VOL:2},
-  7:{FUE:0,SAB:3,VOL:2}, 8:{FUE:2,SAB:1,VOL:1},
+  1:{FUE:3,SAB:1,VOL:2}, 2:{FUE:1,SAB:2,VOL:3}, 3:{FUE:2,SAB:1,VOL:2},
+  4:{FUE:1,SAB:4,VOL:1}, 5:{FUE:1,SAB:2,VOL:3}, 6:{FUE:2,SAB:2,VOL:2},
+  7:{FUE:1,SAB:3,VOL:2}, 8:{FUE:2,SAB:1,VOL:2}, 9:{FUE:5,SAB:2,VOL:3}, 10:{FUE:2,SAB:5,VOL:3},
 };
-const LEVEL_TITLES = [
-  {min:1,title:"El Desconocido",rank:"Rango F"},{min:3,title:"Viajero Estelar",rank:"Rango E"},
-  {min:6,title:"Guardián del Alba",rank:"Rango D"},{min:10,title:"Forjador de Hábitos",rank:"Rango C"},
-  {min:15,title:"Caballero del Camino",rank:"Rango B"},{min:20,title:"Leyenda Viviente",rank:"Rango A"},
-  {min:30,title:"Transcendente",rank:"Rango S"},{min:50,title:"El Maestro",rank:"Rango SS"},
+
+const ACHIEVEMENTS = [
+  { id:"first_step",     icon:"👣", title:"Primer Paso",         desc:"Completa tu primera misión",             check:(s)=>s.totalMissions>=1 },
+  { id:"hydrated",       icon:"💧", title:"Bebedor Legendario",  desc:"Completa el tanque de agua un día",      check:(s)=>s.waterCompleted>=1 },
+  { id:"level3",         icon:"⭐", title:"Viajero Estelar",     desc:"Alcanza el nivel 3",                     check:(s)=>s.level>=3 },
+  { id:"streak3",        icon:"🔥", title:"3 en Raya",           desc:"Mantén una racha de 3 días",             check:(s)=>s.streak>=3 },
+  { id:"first_epic",     icon:"🔥", title:"El Primer Fuego",     desc:"Completa tu primera misión épica",       check:(s)=>s.epicDone },
+  { id:"all_missions",   icon:"✅", title:"Día Perfecto",        desc:"Completa todas las misiones en un día",  check:(s)=>s.dayPerfect>=1 },
+  { id:"constante",      icon:"🌅", title:"Constante",           desc:"Registra ánimo por 5 días",              check:(s)=>s.moodDays>=5 },
+  { id:"first_artifact", icon:"🎖", title:"Primer Artefacto",    desc:"Equipa tu primer artefacto",             check:(s)=>s.equippedCount>=1 },
+  { id:"level10",        icon:"⚔",  title:"El Guerrero",         desc:"Alcanza el nivel 10",                    check:(s)=>s.level>=10 },
+  { id:"streak7",        icon:"🗓", title:"Semana Imparable",    desc:"7 días de racha",                        check:(s)=>s.streak>=7 },
+  { id:"xp500",          icon:"⚡", title:"500 XP Acumulados",   desc:"Acumula 500 XP en total",                check:(s)=>s.totalXP>=500 },
+  { id:"water10",        icon:"🌊", title:"Ola de Hidratación",  desc:"Completa el tanque 10 días",             check:(s)=>s.waterCompleted>=10 },
+  { id:"attrs50",        icon:"💪", title:"Polivalente",         desc:"Suma 50 puntos entre atributos",         check:(s)=>(s.attrs.FUE+s.attrs.SAB+s.attrs.VOL)>=50 },
+  { id:"level20",        icon:"✦",  title:"Leyenda Viviente",    desc:"Alcanza el nivel 20",                    check:(s)=>s.level>=20 },
+  { id:"streak30",       icon:"👑", title:"El Mes Perfecto",     desc:"30 días de racha",                       check:(s)=>s.streak>=30 },
 ];
+
+const STREAK_REWARDS = [
+  { day:7,  reward:"+100 XP bonus",      icon:"🎁", xp:100 },
+  { day:14, reward:"+200 XP bonus",      icon:"💎", xp:200 },
+  { day:30, reward:"+500 XP LEGENDARIO", icon:"👑", xp:500 },
+];
+
+const LEVEL_TITLES = [
+  {min:1, title:"El Desconocido",      rank:"Rango F"},
+  {min:4, title:"Viajero Estelar",     rank:"Rango E"},
+  {min:8, title:"Guardián del Alba",   rank:"Rango D"},
+  {min:12,title:"Forjador de Hábitos", rank:"Rango C"},
+  {min:18,title:"Caballero del Camino",rank:"Rango B"},
+  {min:25,title:"Leyenda Viviente",    rank:"Rango A"},
+  {min:35,title:"Transcendente",       rank:"Rango S"},
+  {min:50,title:"El Maestro",          rank:"Rango SS"},
+];
+
 const AVATAR_ACCESSORIES = [
-  {minLevel:1,id:"base",epic:false},{minLevel:3,id:"eye_glow",epic:false},
-  {minLevel:5,id:"neon_aura",epic:false},{minLevel:8,id:"shoulder_pads",epic:false},
-  {minLevel:10,id:"light_wings",epic:true},{minLevel:15,id:"crown",epic:true},
-  {minLevel:20,id:"full_armor",epic:true},
+  {minLevel:1, id:"base",          epic:false},
+  {minLevel:4, id:"eye_glow",      epic:false},
+  {minLevel:8, id:"neon_aura",     epic:false},
+  {minLevel:12,id:"shoulder_pads", epic:false},
+  {minLevel:18,id:"light_wings",   epic:true},
+  {minLevel:25,id:"crown",         epic:true},
+  {minLevel:35,id:"full_armor",    epic:true},
 ];
 
 const WATER_MSGS = [
@@ -75,39 +91,38 @@ const WATER_MSGS = [
 
 const ARCHETYPES = [
   {id:"warrior",name:"El Guerrero",sub:"Disciplina · Fuerza · Acción",lore:"Tu poder nace de la constancia.",icon:"⚔",aura:"#F97316",mainAttr:"FUE",bg:"radial-gradient(ellipse at 50% -10%, #F9731622 0%, transparent 65%)"},
-  {id:"sage",name:"El Sabio",sub:"Conocimiento · Claridad · Propósito",lore:"La mente es tu arma más poderosa.",icon:"✦",aura:"#10B981",mainAttr:"SAB",bg:"radial-gradient(ellipse at 50% -10%, #10B98122 0%, transparent 65%)"},
+  {id:"sage",   name:"El Sabio",  sub:"Conocimiento · Claridad · Propósito",lore:"La mente es tu arma más poderosa.",icon:"✦",aura:"#10B981",mainAttr:"SAB",bg:"radial-gradient(ellipse at 50% -10%, #10B98122 0%, transparent 65%)"},
   {id:"explorer",name:"El Explorador",sub:"Equilibrio · Aventura · Evolución",lore:"Tu camino tiene infinitos horizontes.",icon:"◎",aura:"#8B5CF6",mainAttr:"VOL",bg:"radial-gradient(ellipse at 50% -10%, #8B5CF622 0%, transparent 65%)"},
 ];
+
 const STAGE_LEVELS=[1,11,26,51,81];
 const MISSIONS_DATA=[
-  {id:1,title:"Forja tu cuerpo",sub:"20 min de movimiento consciente",xp:35,icon:"⚡",area:"cuerpo",difficulty:"normal",lore:"El guerrero forja su cuerpo en el fuego.",why:"20 min de ejercicio elevan dopamina, BDNF y serotonina."},
-  {id:2,title:"Silencia la tormenta",sub:"10 min de meditación o respiración",xp:30,icon:"◎",area:"mente",difficulty:"normal",lore:"La mente en calma ve lo que el caos oculta.",why:"10 min diarios reducen el volumen de la amígdala en 8 semanas."},
-  {id:3,title:"El río de la vida",sub:"8 vasos de agua durante el día",xp:15,icon:"💧",area:"cuerpo",difficulty:"easy",lore:"Tu cuerpo es 70% agua.",why:"Deshidratación del 2% reduce capacidad cognitiva hasta 20%."},
-  {id:4,title:"Alimenta tu mente",sub:"Lee 15 páginas de cualquier libro",xp:25,icon:"📖",area:"mente",difficulty:"normal",lore:"Cada página leída es un nivel ganado.",why:"15 páginas diarias = 18 libros al año."},
-  {id:5,title:"El gran silencio",sub:"1 hora sin redes sociales",xp:20,icon:"🌑",area:"mente",difficulty:"normal",lore:"Tu atención es tu recurso más escaso.",why:"Cada notificación interrumpe el foco ~23 min."},
-  {id:6,title:"El descanso del héroe",sub:"Duerme entre 7 y 9 horas",xp:40,icon:"🌙",area:"cuerpo",difficulty:"normal",lore:"Los héroes se restauran en la oscuridad.",why:"Dormir menos de 6h deteriora el rendimiento igual que 48h sin dormir."},
-  {id:7,title:"Crónicas del viaje",sub:"Escribe 3 cosas buenas de hoy",xp:20,icon:"✍",area:"mente",difficulty:"normal",lore:"El que no recuerda su progreso, cree que no avanza.",why:"El journaling entrena el cerebro para detectar lo positivo."},
-  {id:8,title:"La caminata del sabio",sub:"Camina 5-10 min después de comer",xp:15,icon:"🚶",area:"cuerpo",difficulty:"easy",lore:"Los grandes pensadores caminaban.",why:"10 min post-comida reduce el pico de glucosa hasta 30%."},
-  {id:9,title:"ÉPICA: Entrena 45 min",sub:"Sesión completa de fuerza o cardio",xp:80,icon:"🔥",area:"cuerpo",difficulty:"epic",lore:"Solo los forjados conocen este fuego.",why:"45 min activan adaptaciones que sesiones cortas no logran."},
-  {id:10,title:"ÉPICA: Ayuno digital",sub:"4 horas completamente sin pantallas",xp:90,icon:"⚫",area:"mente",difficulty:"epic",lore:"El silencio absoluto revela verdades.",why:"El cerebro necesita períodos prolongados sin estímulos para consolidar aprendizajes."},
+  {id:1, title:"Forja tu cuerpo",       sub:"20 min de movimiento consciente",    xp:35,icon:"⚡",area:"cuerpo",difficulty:"normal",lore:"El guerrero forja su cuerpo en el fuego.",     why:"20 min de ejercicio elevan dopamina, BDNF y serotonina."},
+  {id:2, title:"Silencia la tormenta",  sub:"10 min de meditación o respiración", xp:30,icon:"◎", area:"mente", difficulty:"normal",lore:"La mente en calma ve lo que el caos oculta.",  why:"10 min diarios reducen el volumen de la amígdala en 8 semanas."},
+  {id:3, title:"El río de la vida",     sub:"8 vasos de agua durante el día",     xp:15,icon:"💧",area:"cuerpo",difficulty:"easy",  lore:"Tu cuerpo es 70% agua.",                       why:"Deshidratación del 2% reduce capacidad cognitiva hasta 20%."},
+  {id:4, title:"Alimenta tu mente",     sub:"Lee 15 páginas de cualquier libro",  xp:25,icon:"📖",area:"mente", difficulty:"normal",lore:"Cada página leída es un nivel ganado.",          why:"15 páginas diarias = 18 libros al año."},
+  {id:5, title:"El gran silencio",      sub:"1 hora sin redes sociales",          xp:20,icon:"🌑",area:"mente", difficulty:"normal",lore:"Tu atención es tu recurso más escaso.",          why:"Cada notificación interrumpe el foco ~23 min."},
+  {id:6, title:"El descanso del héroe", sub:"Duerme entre 7 y 9 horas",           xp:40,icon:"🌙",area:"cuerpo",difficulty:"normal",lore:"Los héroes se restauran en la oscuridad.",      why:"Dormir menos de 6h deteriora igual que 48h sin dormir."},
+  {id:7, title:"Crónicas del viaje",    sub:"Escribe 3 cosas buenas de hoy",      xp:20,icon:"✍", area:"mente", difficulty:"normal",lore:"El que no recuerda su progreso, no avanza.",    why:"El journaling entrena al cerebro para detectar lo positivo."},
+  {id:8, title:"La caminata del sabio", sub:"Camina 5-10 min después de comer",   xp:15,icon:"🚶",area:"cuerpo",difficulty:"easy",  lore:"Los grandes pensadores caminaban.",             why:"10 min post-comida reduce el pico de glucosa hasta 30%."},
+  {id:9, title:"ÉPICA: Entrena 45 min", sub:"Sesión completa de fuerza o cardio", xp:80,icon:"🔥",area:"cuerpo",difficulty:"epic",  lore:"Solo los forjados conocen este fuego.",        why:"45 min activan adaptaciones que sesiones cortas no logran."},
+  {id:10,title:"ÉPICA: Ayuno digital",  sub:"4 horas completamente sin pantallas",xp:90,icon:"⚫",area:"mente", difficulty:"epic",  lore:"El silencio absoluto revela verdades.",         why:"El cerebro necesita períodos prolongados sin estímulos para consolidar aprendizajes."},
 ];
+
 const CONDITIONS=["Diabetes","Hipertensión","Ansiedad","Depresión","Colesterol alto","Hipotiroidismo","Insomnio","Sedentarismo"];
 const GOALS=["Perder peso","Ganar músculo","Reducir estrés","Mejorar sueño","Más energía","Salud mental","Más disciplina","Comer mejor"];
 const MOODS=[{e:"😔",l:"Bajo",v:1},{e:"😐",l:"Regular",v:2},{e:"🙂",l:"Bien",v:3},{e:"😄",l:"Excelente",v:4}];
-const NAV=[{id:"home",icon:"⌂",l:"Inicio"},{id:"mapa",icon:"🗺",l:"Mapa"},{id:"misiones",icon:"◈",l:"Misiones"},{id:"logros",icon:"🏆",l:"Logros"},{id:"salud",icon:"✦",l:"Salud"},{id:"mente",icon:"◎",l:"Mente"}];
+const NAV=[{id:"home",icon:"⌂",l:"Inicio"},{id:"mapa",icon:"🗺",l:"Mapa"},{id:"misiones",icon:"◈",l:"Misiones"},{id:"artefactos",icon:"⚙",l:"Arsenal"},{id:"logros",icon:"🏆",l:"Logros"},{id:"salud",icon:"✦",l:"Salud"},{id:"mente",icon:"◎",l:"Mente"}];
 const STAR_MISSIONS=[
   {title:"¡Estrella Fugaz! Sal a caminar 10 min ahora",xp:80},
-  {title:"¡Estrella Fugaz! Bebe 2 vasos de agua YA",xp:50},
-  {title:"¡Estrella Fugaz! Haz 20 sentadillas ahora",xp:70},
-  {title:"¡Estrella Fugaz! Respira profundo 5 veces",xp:45},
-  {title:"¡Estrella Fugaz! Escribe algo que te haga feliz",xp:55},
+  {title:"¡Estrella Fugaz! Bebe 2 vasos de agua YA",  xp:50},
+  {title:"¡Estrella Fugaz! Haz 20 sentadillas ahora", xp:70},
+  {title:"¡Estrella Fugaz! Respira profundo 5 veces", xp:45},
+  {title:"¡Estrella Fugaz! Escribe algo que te alegre",xp:55},
 ];
 
-// ─── Storage ──────────────────────────────────────────────────────
 function save(d){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch{}}
 function load(){try{const d=localStorage.getItem(STORAGE_KEY);return d?JSON.parse(d):null;}catch{return null;}}
-
-// ─── Helpers ──────────────────────────────────────────────────────
 function getLevelTitle(l){let t=LEVEL_TITLES[0];for(const lt of LEVEL_TITLES){if(l>=lt.min)t=lt;}return t;}
 function getAcc(level,epicDone){return AVATAR_ACCESSORIES.filter(a=>level>=a.minLevel&&(!a.epic||epicDone));}
 function getHybrid(archetype,attrs){
@@ -117,193 +132,156 @@ function getHybrid(archetype,attrs){
   if(!dom)return null;
   return{FUE:{label:"Guerrero Híbrido",color:C.cta},SAB:{label:"Sabio Híbrido",color:C.green},VOL:{label:"Explorador Híbrido",color:C.purple}}[dom[0]]||null;
 }
-function getCurrentStage(level){
-  let stage=MAP_STAGES[0];
-  for(const s of MAP_STAGES){if(level>=s.minLevel)stage=s;}
-  return stage;
+function getArtifactBonus(equipped,attr){
+  return equipped.reduce((sum,id)=>{const a=ARTIFACTS.find(x=>x.id===id);return a&&a.attr===attr?sum+a.bonus:sum;},0);
 }
 
-// ─── Star Field ───────────────────────────────────────────────────
 function StarField(){
-  const stars=useMemo(()=>Array.from({length:55},(_,i)=>({id:i,x:Math.random()*100,y:Math.random()*100,sz:Math.random()*2+0.4,dur:Math.random()*20+14,delay:Math.random()*14,op:Math.random()*0.5+0.1})),[]);
+  const stars=useMemo(()=>Array.from({length:60},(_,i)=>({id:i,x:Math.random()*100,y:Math.random()*100,sz:Math.random()*2.2+0.4,dur:Math.random()*22+12,delay:Math.random()*16,op:Math.random()*0.55+0.1})),[]);
   return(
     <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
       {stars.map(s=><div key={s.id} style={{position:"absolute",left:`${s.x}%`,top:`${s.y}%`,width:s.sz,height:s.sz,borderRadius:"50%",background:"#fff",opacity:s.op,animation:`star-drift ${s.dur}s ${s.delay}s ease-in-out infinite alternate`}}/>)}
-      <div style={{position:"absolute",top:"8%",left:"12%",width:180,height:180,borderRadius:"50%",background:"radial-gradient(circle,#10B98108,transparent 70%)",animation:"nebula-drift 28s ease-in-out infinite"}}/>
-      <div style={{position:"absolute",top:"55%",right:"8%",width:140,height:140,borderRadius:"50%",background:"radial-gradient(circle,#8B5CF608,transparent 70%)",animation:"nebula-drift 32s 6s ease-in-out infinite reverse"}}/>
+      <div style={{position:"absolute",top:"8%",left:"12%",width:200,height:200,borderRadius:"50%",background:"radial-gradient(circle,#10B98110,transparent 70%)",animation:"nebula-drift 28s ease-in-out infinite"}}/>
+      <div style={{position:"absolute",top:"55%",right:"8%",width:160,height:160,borderRadius:"50%",background:"radial-gradient(circle,#8B5CF610,transparent 70%)",animation:"nebula-drift 32s 6s ease-in-out infinite reverse"}}/>
+      <div style={{position:"absolute",top:"35%",left:"60%",width:120,height:120,borderRadius:"50%",background:"radial-gradient(circle,#F59E0B08,transparent 70%)",animation:"nebula-drift 25s 3s ease-in-out infinite"}}/>
     </div>
   );
 }
 
-// ─── EPIC WORLD MAP ───────────────────────────────────────────────
-function WorldMap({level,totalXP,playerName,archetype,epicDone,attrs}){
+function WorldMap({level,playerName,archetype,epicDone,attrs,equipped}){
   const [tooltip,setTooltip]=useState(null);
-  const currentStageIdx=MAP_STAGES.findLastIndex(s=>level>=s.minLevel);
+  const prevLevelRef=useRef(level);
+  const [shipAnim,setShipAnim]=useState(false);
+  const currentIdx=MAP_STAGES.findLastIndex(s=>level>=s.minLevel);
+  const arc=ARCHETYPES.find(a=>a.id===archetype)||ARCHETYPES[0];
 
-  // SVG path coordinates for each stage (sinuous path)
-  const stagePositions=[
-    {x:48, y:340},{x:130,y:260},{x:230,y:300},{x:330,y:200},{x:420,y:250},{x:510,y:150},{x:590,y:80}
-  ];
+  useEffect(()=>{
+    if(level>prevLevelRef.current){setShipAnim(true);setTimeout(()=>setShipAnim(false),1200);}
+    prevLevelRef.current=level;
+  },[level]);
 
-  // Robot position — interpolate between current and next stage
-  const robotPos=stagePositions[Math.min(currentStageIdx,stagePositions.length-1)];
+  const positions=[{x:55,y:350},{x:148,y:272},{x:248,y:308},{x:338,y:194},{x:425,y:250},{x:515,y:146},{x:596,y:70}];
 
-  // Build SVG path through all points
-  const pathD=stagePositions.reduce((acc,p,i)=>{
-    if(i===0)return `M ${p.x} ${p.y}`;
-    const prev=stagePositions[i-1];
-    const cx=(prev.x+p.x)/2,cy=(prev.y+p.y)/2;
-    return `${acc} Q ${prev.x} ${prev.y} ${cx} ${cy}`;
+  const buildPath=(pts)=>pts.reduce((acc,p,i)=>{
+    if(i===0)return`M ${p.x} ${p.y}`;
+    const prev=pts[i-1];
+    return`${acc} Q ${prev.x+8} ${prev.y-8} ${(prev.x+p.x)/2} ${(prev.y+p.y)/2}`;
   },"");
 
+  const shipPos=positions[Math.min(currentIdx,positions.length-1)];
+
   return(
-    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:20,padding:"20px 16px",marginBottom:16,overflow:"hidden",position:"relative"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+    <div style={{background:"linear-gradient(135deg,#0d1829,#09101e)",border:`1px solid ${C.border}`,borderRadius:20,padding:"16px",marginBottom:16,overflow:"hidden"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
         <div>
-          <div style={{fontSize:10,color:C.muted,letterSpacing:3}}>MAPA DEL VIAJE</div>
-          <div style={{fontSize:13,color:C.text,fontWeight:600,marginTop:2}}>{MAP_STAGES[currentStageIdx]?.label} <span style={{color:MAP_STAGES[currentStageIdx]?.color}}>— {MAP_STAGES[currentStageIdx]?.sublabel}</span></div>
+          <div style={{fontSize:9,color:C.muted,letterSpacing:3}}>MAPA DEL VIAJE</div>
+          <div style={{fontSize:13,color:C.text,fontWeight:700,marginTop:2}}>{MAP_STAGES[currentIdx]?.icon} {MAP_STAGES[currentIdx]?.label} <span style={{color:MAP_STAGES[currentIdx]?.color,fontSize:11,fontWeight:400}}>— {MAP_STAGES[currentIdx]?.sublabel}</span></div>
         </div>
-        <div style={{fontSize:9,color:C.muted,textAlign:"right"}}>Etapa {currentStageIdx+1}/{MAP_STAGES.length}</div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:9,color:C.muted}}>Etapa {currentIdx+1}/{MAP_STAGES.length}</div>
+          <div style={{fontSize:11,color:C.green,fontWeight:700}}>Nv.{level}</div>
+        </div>
       </div>
 
-      {/* Map SVG */}
-      <div style={{position:"relative",overflowX:"auto",overflowY:"hidden"}}>
-        <svg viewBox="0 0 640 400" style={{width:"100%",minWidth:320,height:"auto"}}>
-          {/* Galactic background */}
-          <defs>
-            <radialGradient id="mapbg" cx="50%" cy="50%" r="70%">
-              <stop offset="0%" stopColor="#1a2540" stopOpacity="1"/>
-              <stop offset="100%" stopColor="#0a0f1e" stopOpacity="1"/>
-            </radialGradient>
-            <filter id="glow-map">
-              <feGaussianBlur stdDeviation="3" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="glow-strong">
-              <feGaussianBlur stdDeviation="6" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
+      <svg viewBox="0 0 650 400" style={{width:"100%",height:"auto",display:"block"}}>
+        <defs>
+          <radialGradient id="mapbg3" cx="25%" cy="75%" r="85%">
+            <stop offset="0%" stopColor="#1e3050"/><stop offset="50%" stopColor="#0d1829"/><stop offset="100%" stopColor="#060810"/>
+          </radialGradient>
+          <filter id="gm3"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="gs3"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="gb3"><feGaussianBlur stdDeviation="16"/></filter>
+        </defs>
+        <rect width="650" height="400" fill="url(#mapbg3)" rx="14"/>
+        {/* Planet bottom-left */}
+        <circle cx="28" cy="372" r="60" fill="#F59E0B" fillOpacity="0.1" filter="url(#gb3)"/>
+        <circle cx="28" cy="372" r="34" fill="#F97316" fillOpacity="0.16"/>
+        <circle cx="28" cy="372" r="20" fill="#F59E0B" fillOpacity="0.3"/>
+        {/* Galaxy top-right */}
+        <ellipse cx="608" cy="46" rx="52" ry="26" fill="#8B5CF6" fillOpacity="0.07" transform="rotate(-18,608,46)" filter="url(#gb3)"/>
+        <ellipse cx="608" cy="46" rx="28" ry="13" fill="#8B5CF6" fillOpacity="0.11" transform="rotate(-18,608,46)"/>
+        {/* Stars */}
+        {[[82,38,1.6],[205,24,1.1],[358,62,1.8],[505,33,1.2],[618,98,1.5],[102,138,0.9],[462,108,1.3],[574,186,1.0],[62,272,1.4],[314,352,1.1],[528,332,1.6],[172,318,0.8],[402,276,1.2],[282,148,0.9],[445,190,1.1],[160,195,0.7]].map(([x,y,r],i)=>(
+          <circle key={i} cx={x} cy={y} r={r} fill="#fff" opacity={0.18+((i*7)%5)*0.09}/>
+        ))}
+        {/* Nebula blobs */}
+        <ellipse cx="165" cy="92" rx="95" ry="58" fill="#10B981" fillOpacity="0.04" filter="url(#gb3)"/>
+        <ellipse cx="495" cy="292" rx="115" ry="68" fill="#8B5CF6" fillOpacity="0.05" filter="url(#gb3)"/>
+        <ellipse cx="345" cy="178" rx="135" ry="88" fill="#F59E0B" fillOpacity="0.03" filter="url(#gb3)"/>
+        {/* Asteroid belt */}
+        {[[255,332,4.2],[278,345,3.1],[300,328,5],[322,341,3.6]].map(([x,y,r],i)=>(
+          <ellipse key={i} cx={x} cy={y} rx={r} ry={r*0.55} fill="#334155" opacity="0.45" transform={`rotate(${i*28},${x},${y})`}/>
+        ))}
+        {/* Path - unfinished */}
+        <path d={buildPath(positions)} fill="none" stroke="#2d3a50" strokeWidth="2.5" strokeDasharray="5 6" strokeLinecap="round"/>
+        {/* Path - completed */}
+        {currentIdx>0&&<>
+          <path d={buildPath(positions.slice(0,currentIdx+1))} fill="none" stroke={C.green} strokeWidth="2.5" strokeLinecap="round" filter="url(#gm3)" opacity="0.9"/>
+          <path d={buildPath(positions.slice(0,currentIdx+1))} fill="none" stroke="#fff" strokeWidth="0.7" strokeLinecap="round" opacity="0.25"/>
+        </>}
+        {/* Stage nodes */}
+        {MAP_STAGES.map((stage,i)=>{
+          const pos=positions[i];
+          const unlocked=level>=stage.minLevel;
+          const isCurrent=i===currentIdx;
+          const isNext=i===currentIdx+1;
+          const prevMin=MAP_STAGES[i-1]?.minLevel||1;
+          const prog=isNext?Math.min(((level-prevMin)/(stage.minLevel-prevMin))*94,94):0;
+          return(
+            <g key={stage.id} onClick={()=>setTooltip(tooltip===i?null:i)} style={{cursor:"pointer"}}>
+              {unlocked&&<circle cx={pos.x} cy={pos.y} r="26" fill={stage.color} fillOpacity="0.1" filter="url(#gs3)"/>}
+              {isCurrent&&<circle cx={pos.x} cy={pos.y} r="22" fill="none" stroke={stage.color} strokeWidth="1.5" opacity="0.45" style={{animation:"node-pulse 2s ease-in-out infinite"}}/>}
+              <circle cx={pos.x} cy={pos.y} r={isCurrent?17:13} fill={unlocked?stage.color+"28":"#0d1829"} stroke={unlocked?stage.color:"#2d3a50"} strokeWidth={isCurrent?2:1.5}/>
+              <text x={pos.x} y={pos.y+(isCurrent?6:5)} textAnchor="middle" fontSize={isCurrent?13:10}>{stage.icon}</text>
+              <text x={pos.x} y={pos.y+31} textAnchor="middle" fontSize="8" fill={unlocked?stage.color:"#4b5a72"} fontFamily="sans-serif">{stage.label}</text>
+              {!unlocked&&<text x={pos.x+10} y={pos.y-10} fontSize="7.5" fill="#4b5a72">🔒</text>}
+              {isNext&&level>prevMin&&(
+                <circle cx={pos.x} cy={pos.y} r="16" fill="none" stroke={stage.color} strokeWidth="2"
+                  strokeDasharray={`${prog} 94`} strokeLinecap="round" transform={`rotate(-90 ${pos.x} ${pos.y})`} opacity="0.55"/>
+              )}
+              {tooltip===i&&(
+                <g>
+                  <rect x={Math.min(pos.x-64,556)} y={pos.y-80} width="140" height="58" rx="8" fill="#1E293B" stroke={stage.color} strokeWidth="1"/>
+                  <text x={Math.min(pos.x-64,556)+70} y={pos.y-60} textAnchor="middle" fontSize="10" fill={stage.color} fontFamily="sans-serif" fontWeight="bold">{stage.icon} {stage.label}</text>
+                  <text x={Math.min(pos.x-64,556)+70} y={pos.y-45} textAnchor="middle" fontSize="8" fill="#64748B" fontFamily="sans-serif">{unlocked?"✓ Desbloqueada":`Requiere Nv.${stage.minLevel}`}</text>
+                  <text x={Math.min(pos.x-64,556)+70} y={pos.y-31} textAnchor="middle" fontSize="8" fill="#64748B" fontFamily="sans-serif">{stage.sublabel}</text>
+                </g>
+              )}
+            </g>
+          );
+        })}
+        {/* SPACESHIP */}
+        <g style={{animation:shipAnim?"ship-warp 1.2s ease-in-out":"ship-idle 3s ease-in-out infinite"}}
+           transform={`translate(${shipPos.x-15},${shipPos.y-52})`}>
+          <ellipse cx="15" cy="56" rx="13" ry="5" fill={arc.aura} fillOpacity="0.35" filter="url(#gm3)"/>
+          <ellipse cx="15" cy="54" rx="5" ry="9" fill="#F97316" fillOpacity="0.85" filter="url(#gm3)" style={{animation:"flame-flicker 0.4s ease-in-out infinite alternate"}}/>
+          <ellipse cx="15" cy="52" rx="3" ry="6" fill="#F59E0B" fillOpacity="0.95"/>
+          <path d="M 15 4 L 24 32 L 15 28 L 6 32 Z" fill="#1E293B" stroke={arc.aura} strokeWidth="1.3"/>
+          <path d="M 6 30 L 0 40 L 8 36 Z" fill={arc.aura} fillOpacity="0.75"/>
+          <path d="M 24 30 L 30 40 L 22 36 Z" fill={arc.aura} fillOpacity="0.75"/>
+          <ellipse cx="15" cy="17" rx="5" ry="7" fill={arc.aura} fillOpacity="0.28"/>
+          <ellipse cx="15" cy="16" rx="3" ry="4.5" fill={arc.aura} fillOpacity="0.6"/>
+          <text x="15" y="-4" textAnchor="middle" fontSize="7.5" fill="#F1F5F9" fontFamily="sans-serif" fontWeight="bold">{playerName}</text>
+        </g>
+        {/* Chest icons */}
+        {MAP_STAGES.map((stage,i)=>{
+          const pos=positions[i];
+          if(level<stage.minLevel||i===0)return null;
+          return<text key={`ch${i}`} x={pos.x+17} y={pos.y-13} fontSize="9" opacity="0.6">📦</text>;
+        })}
+      </svg>
 
-          <rect width="640" height="400" fill="url(#mapbg)" rx="12"/>
-
-          {/* Stars in map */}
-          {[{x:80,y:50},{x:200,y:30},{x:350,y:70},{x:500,y:40},{x:600,y:90},{x:100,y:150},{x:450,y:120},{x:580,y:200},{x:60,y:280},{x:300,y:360},{x:520,y:340}].map((s,i)=>(
-            <circle key={i} cx={s.x} cy={s.y} r={Math.random()*1.5+0.5} fill="#ffffff" opacity={0.3+Math.random()*0.4}/>
-          ))}
-
-          {/* Nebula blobs */}
-          <ellipse cx="150" cy="100" rx="80" ry="50" fill="#10B981" fillOpacity="0.04"/>
-          <ellipse cx="500" cy="300" rx="100" ry="60" fill="#8B5CF6" fillOpacity="0.05"/>
-          <ellipse cx="350" cy="180" rx="120" ry="80" fill="#F59E0B" fillOpacity="0.03"/>
-
-          {/* Path — completed portion */}
-          <path d={pathD} fill="none" stroke={C.border} strokeWidth="3" strokeDasharray="6 4" strokeLinecap="round"/>
-          {/* Glowing completed path */}
-          {currentStageIdx>0&&(
-            <path d={stagePositions.slice(0,currentStageIdx+1).reduce((acc,p,i)=>{
-              if(i===0)return`M ${p.x} ${p.y}`;
-              const prev=stagePositions[i-1];
-              const cx=(prev.x+p.x)/2,cy=(prev.y+p.y)/2;
-              return`${acc} Q ${prev.x} ${prev.y} ${cx} ${cy}`;
-            },"")} fill="none" stroke={C.green} strokeWidth="3" strokeLinecap="round"
-            filter="url(#glow-map)" opacity="0.8"/>
-          )}
-
-          {/* Stage nodes */}
-          {MAP_STAGES.map((stage,i)=>{
-            const pos=stagePositions[i];
-            const unlocked=level>=stage.minLevel;
-            const isCurrent=i===currentStageIdx;
-            const isNext=i===currentStageIdx+1;
-            const nextLevel=MAP_STAGES[i]?.minLevel;
-            const progress=isNext?(level-MAP_STAGES[i-1]?.minLevel)/(nextLevel-MAP_STAGES[i-1]?.minLevel)*100:0;
-
-            return(
-              <g key={stage.id} onClick={()=>setTooltip(tooltip===i?null:i)} style={{cursor:"pointer"}}>
-                {/* Glow for unlocked */}
-                {unlocked&&<circle cx={pos.x} cy={pos.y} r="22" fill={stage.color} fillOpacity="0.15" filter="url(#glow-strong)"/>}
-                {/* Node circle */}
-                <circle cx={pos.x} cy={pos.y} r={isCurrent?18:14}
-                  fill={unlocked?stage.color+"33":C.card}
-                  stroke={unlocked?stage.color:C.border}
-                  strokeWidth={isCurrent?2.5:1.5}
-                  style={isCurrent?{animation:"node-pulse 2s ease-in-out infinite"}:{}}/>
-                {/* Icon */}
-                <text x={pos.x} y={pos.y+5} textAnchor="middle" fontSize={isCurrent?14:11}>{stage.icon}</text>
-                {/* Label below */}
-                <text x={pos.x} y={pos.y+32} textAnchor="middle" fontSize="9" fill={unlocked?stage.color:C.muted} fontFamily="sans-serif">{stage.label}</text>
-                {/* Lock icon for locked */}
-                {!unlocked&&!isNext&&<text x={pos.x+10} y={pos.y-10} fontSize="8" fill={C.muted}>🔒</text>}
-                {/* Progress arc for next stage */}
-                {isNext&&(
-                  <circle cx={pos.x} cy={pos.y} r="16" fill="none" stroke={stage.color} strokeWidth="2"
-                    strokeDasharray={`${progress*1.005} 100`} strokeLinecap="round"
-                    transform={`rotate(-90 ${pos.x} ${pos.y})`} opacity="0.6"/>
-                )}
-                {/* Tooltip */}
-                {tooltip===i&&(
-                  <g>
-                    <rect x={Math.min(pos.x-60,560)} y={pos.y-70} width="130" height="52" rx="8" fill={C.card} stroke={stage.color} strokeWidth="1"/>
-                    <text x={Math.min(pos.x-60,560)+65} y={pos.y-52} textAnchor="middle" fontSize="10" fill={stage.color} fontFamily="sans-serif" fontWeight="bold">{stage.label}</text>
-                    <text x={Math.min(pos.x-60,560)+65} y={pos.y-38} textAnchor="middle" fontSize="8" fill={C.muted} fontFamily="sans-serif">
-                      {unlocked?"✓ Desbloqueado":`Nv.${stage.minLevel} requerido`}
-                    </text>
-                    <text x={Math.min(pos.x-60,560)+65} y={pos.y-24} textAnchor="middle" fontSize="8" fill={C.muted} fontFamily="sans-serif">{stage.sublabel}</text>
-                  </g>
-                )}
-              </g>
-            );
-          })}
-
-          {/* ROBOT on map — mini avatar */}
-          <g style={{animation:"robot-idle 2s ease-in-out infinite"}} transform={`translate(${robotPos.x-12},${robotPos.y-45})`}>
-            {/* Glow under robot */}
-            <ellipse cx="12" cy="44" rx="14" ry="5" fill={ARCHETYPES.find(a=>a.id===archetype)?.aura||C.green} fillOpacity="0.4" filter="url(#glow-map)"/>
-            {/* Body */}
-            <rect x="4" y="20" width="16" height="18" rx="4" fill="#1E293B" stroke={ARCHETYPES.find(a=>a.id===archetype)?.aura||C.green} strokeWidth="1.2"/>
-            {/* Head */}
-            <ellipse cx="12" cy="14" rx="8" ry="8" fill="#1E293B" stroke={ARCHETYPES.find(a=>a.id===archetype)?.aura||C.green} strokeWidth="1.2"/>
-            {/* Eyes */}
-            <ellipse cx="9" cy="13" rx="1.5" ry="2" fill={ARCHETYPES.find(a=>a.id===archetype)?.aura||C.green}/>
-            <ellipse cx="15" cy="13" rx="1.5" ry="2" fill={ARCHETYPES.find(a=>a.id===archetype)?.aura||C.green}/>
-            {/* Legs */}
-            <rect x="6" y="37" width="4" height="7" rx="2" fill="#1E293B" stroke={ARCHETYPES.find(a=>a.id===archetype)?.aura||C.green} strokeWidth="0.8"/>
-            <rect x="14" y="37" width="4" height="7" rx="2" fill="#1E293B" stroke={ARCHETYPES.find(a=>a.id===archetype)?.aura||C.green} strokeWidth="0.8"/>
-            {/* Name tag */}
-            <text x="12" y="-4" textAnchor="middle" fontSize="7" fill={C.text} fontFamily="sans-serif">{playerName}</text>
-          </g>
-
-          {/* Chest icons at certain milestones */}
-          {MAP_STAGES.map((stage,i)=>{
-            const pos=stagePositions[i];
-            const unlocked=level>=stage.minLevel;
-            if(!unlocked||i===0)return null;
-            return(
-              <g key={`chest-${i}`}>
-                <text x={pos.x+18} y={pos.y-12} fontSize="10" opacity="0.7">📦</text>
-              </g>
-            );
-          })}
-        </svg>
+      <div style={{marginTop:10,padding:"8px 14px",background:MAP_STAGES[currentIdx]?.color+"14",border:`1px solid ${MAP_STAGES[currentIdx]?.color}28`,borderRadius:10,fontSize:11,color:MAP_STAGES[currentIdx]?.color,fontStyle:"italic",textAlign:"center"}}>
+        "{MAP_STAGES[currentIdx]?.unlockMsg}"
       </div>
-
-      {/* Stage unlock message */}
-      {MAP_STAGES[currentStageIdx]&&(
-        <div style={{marginTop:10,padding:"8px 12px",background:MAP_STAGES[currentStageIdx].color+"15",border:`1px solid ${MAP_STAGES[currentStageIdx].color}30`,borderRadius:10,fontSize:11,color:MAP_STAGES[currentStageIdx].color,fontStyle:"italic",textAlign:"center"}}>
-          "{MAP_STAGES[currentStageIdx].unlockMsg}"
-        </div>
-      )}
-
-      {/* Next stage progress */}
-      {currentStageIdx<MAP_STAGES.length-1&&(
+      {currentIdx<MAP_STAGES.length-1&&(
         <div style={{marginTop:10}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-            <span style={{fontSize:10,color:C.muted}}>Próxima etapa: <span style={{color:MAP_STAGES[currentStageIdx+1]?.color}}>{MAP_STAGES[currentStageIdx+1]?.label}</span></span>
-            <span style={{fontSize:10,color:C.green,fontWeight:700}}>Nv.{MAP_STAGES[currentStageIdx+1]?.minLevel} requerido</span>
+            <span style={{fontSize:10,color:C.muted}}>Próxima: <span style={{color:MAP_STAGES[currentIdx+1]?.color}}>{MAP_STAGES[currentIdx+1]?.icon} {MAP_STAGES[currentIdx+1]?.label}</span></span>
+            <span style={{fontSize:10,color:C.green,fontWeight:700}}>Nv.{MAP_STAGES[currentIdx+1]?.minLevel} requerido</span>
           </div>
           <div style={{height:4,background:C.bg,borderRadius:2,overflow:"hidden"}}>
-            <div style={{height:"100%",width:`${Math.min(((level-MAP_STAGES[currentStageIdx]?.minLevel)/(MAP_STAGES[currentStageIdx+1]?.minLevel-MAP_STAGES[currentStageIdx]?.minLevel))*100,100)}%`,background:`linear-gradient(90deg,${MAP_STAGES[currentStageIdx+1]?.color}55,${MAP_STAGES[currentStageIdx+1]?.color})`,borderRadius:2,transition:"width 1s ease",boxShadow:`0 0 8px ${MAP_STAGES[currentStageIdx+1]?.color}`}}/>
+            <div style={{height:"100%",width:`${Math.min(((level-(MAP_STAGES[currentIdx]?.minLevel||1))/((MAP_STAGES[currentIdx+1]?.minLevel||2)-(MAP_STAGES[currentIdx]?.minLevel||1)))*100,100)}%`,background:`linear-gradient(90deg,${MAP_STAGES[currentIdx+1]?.color}55,${MAP_STAGES[currentIdx+1]?.color})`,borderRadius:2,transition:"width 0.8s ease",boxShadow:`0 0 8px ${MAP_STAGES[currentIdx+1]?.color}`}}/>
           </div>
         </div>
       )}
@@ -311,31 +289,99 @@ function WorldMap({level,totalXP,playerName,archetype,epicDone,attrs}){
   );
 }
 
-// ─── ACHIEVEMENTS SCREEN ──────────────────────────────────────────
+function ArsenalScreen({level,equipped,setEquipped,addXP,attrs}){
+  const [animating,setAnimating]=useState(null);
+  const ac={FUE:C.cta,SAB:C.green,VOL:C.purple};
+  const ai={FUE:"💪",SAB:"📖",VOL:"⚡"};
+  const bonus={FUE:getArtifactBonus(equipped,"FUE"),SAB:getArtifactBonus(equipped,"SAB"),VOL:getArtifactBonus(equipped,"VOL")};
+
+  function toggleEquip(id){
+    const art=ARTIFACTS.find(a=>a.id===id);
+    if(!art||level<art.minLevel)return;
+    setEquipped(prev=>{
+      if(prev.includes(id))return prev.filter(x=>x!==id);
+      setAnimating(id);setTimeout(()=>setAnimating(null),900);
+      addXP(art.bonus,null,true);
+      return[...prev,id];
+    });
+  }
+
+  return(
+    <div style={{maxWidth:660,margin:"0 auto",padding:"24px 16px 40px"}}>
+      <h2 style={{fontFamily:"'Cinzel',serif",fontSize:22,color:C.text,letterSpacing:2,marginBottom:4}}>⚙ Arsenal de Artefactos</h2>
+      <p style={{fontSize:13,color:C.muted,marginBottom:20}}>Equipa artefactos para potenciar tus atributos. Se desbloquean al subir de nivel.</p>
+      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px 16px",marginBottom:20}}>
+        <div style={{fontSize:10,color:C.muted,letterSpacing:3,marginBottom:12}}>BONIFICACIONES ACTIVAS</div>
+        <div style={{display:"flex",gap:10}}>
+          {["FUE","SAB","VOL"].map(k=>(
+            <div key={k} style={{flex:1,background:C.bg,border:`1px solid ${ac[k]}22`,borderRadius:10,padding:"10px 8px",textAlign:"center"}}>
+              <div style={{fontSize:16,marginBottom:4}}>{ai[k]}</div>
+              <div style={{fontFamily:"'Cinzel',serif",fontSize:17,color:ac[k]}}>{attrs[k]}<span style={{fontSize:12,color:C.green,marginLeft:2}}>+{bonus[k]}</span></div>
+              <div style={{fontSize:9,color:C.muted,marginTop:2}}>{k}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:10,fontSize:11,color:C.muted,textAlign:"center"}}>{equipped.length} artefacto{equipped.length!==1?"s":""} equipado{equipped.length!==1?"s":""}</div>
+      </div>
+      {["FUE","SAB","VOL"].map(attr=>{
+        const labels={FUE:"⚔ Fuerza",SAB:"📖 Sabiduría",VOL:"⚡ Voluntad"};
+        return(
+          <div key={attr} style={{marginBottom:24}}>
+            <div style={{fontSize:10,color:ac[attr],letterSpacing:3,marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${ac[attr]}22`}}>{labels[attr]}</div>
+            {ARTIFACTS.filter(a=>a.attr===attr).map(art=>{
+              const unlocked=level>=art.minLevel;
+              const isEq=equipped.includes(art.id);
+              const isAnim=animating===art.id;
+              return(
+                <div key={art.id} style={{background:isEq?art.color+"10":C.card,border:`1px solid ${isEq?art.color+"55":unlocked?C.border:"#1a2035"}`,borderRadius:14,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:14,opacity:unlocked?1:0.45,transition:"all 0.3s",boxShadow:isEq?`0 0 20px ${art.color}18`:"none",animation:isAnim?"equip-flash 0.9s ease":"none"}}>
+                  <div style={{fontSize:32,filter:isEq?`drop-shadow(0 0 10px ${art.color})`:"none",transition:"filter 0.3s",flexShrink:0}}>{art.icon}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"wrap"}}>
+                      <span style={{fontSize:14,color:isEq?art.color:C.text,fontWeight:600}}>{art.name}</span>
+                      {isEq&&<span style={{fontSize:9,color:art.color,background:art.color+"18",borderRadius:5,padding:"2px 7px",border:`1px solid ${art.color}33`,whiteSpace:"nowrap"}}>EQUIPADO</span>}
+                      {!unlocked&&<span style={{fontSize:9,color:C.muted}}>🔒 Nv.{art.minLevel}</span>}
+                    </div>
+                    <div style={{fontSize:11,color:C.muted,marginBottom:4,fontStyle:"italic"}}>{art.desc}</div>
+                    <div style={{fontSize:11,color:art.color,fontWeight:700}}>+{art.bonus} {attr}{!isEq&&unlocked?" · al equipar":""}</div>
+                  </div>
+                  {unlocked&&(
+                    <button onClick={()=>toggleEquip(art.id)} style={{flexShrink:0,background:isEq?art.color+"22":art.color,border:`1px solid ${art.color}`,borderRadius:10,padding:"8px 14px",color:isEq?art.color:"#000",fontSize:12,cursor:"pointer",fontFamily:"'Cinzel',serif",fontWeight:700,transition:"all 0.3s",whiteSpace:"nowrap"}}>
+                      {isEq?"Quitar":"Equipar"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function AchievementsScreen({stats,unlockedAchievements}){
   return(
     <div style={{maxWidth:660,margin:"0 auto",padding:"24px 16px 40px"}}>
       <h2 style={{fontFamily:"'Cinzel',serif",fontSize:22,color:C.text,letterSpacing:2,marginBottom:6}}>🏆 Logros</h2>
       <p style={{fontSize:13,color:C.muted,marginBottom:20}}>{unlockedAchievements.length}/{ACHIEVEMENTS.length} desbloqueados</p>
-      {/* Progress */}
       <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px 16px",marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-          <span style={{fontSize:12,color:C.muted}}>Colección de logros</span>
+          <span style={{fontSize:12,color:C.muted}}>Colección</span>
           <span style={{fontSize:12,color:C.orange,fontWeight:700}}>{Math.round((unlockedAchievements.length/ACHIEVEMENTS.length)*100)}%</span>
         </div>
         <div style={{height:6,background:C.bg,borderRadius:3,overflow:"hidden"}}>
           <div style={{height:"100%",width:`${(unlockedAchievements.length/ACHIEVEMENTS.length)*100}%`,background:`linear-gradient(90deg,${C.orange}55,${C.orange})`,borderRadius:3,boxShadow:`0 0 10px ${C.orange}`}}/>
         </div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:10}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(148px,1fr))",gap:10}}>
         {ACHIEVEMENTS.map(a=>{
           const unlocked=unlockedAchievements.includes(a.id);
           return(
-            <div key={a.id} style={{background:C.card,border:`1px solid ${unlocked?C.orange+"44":C.border}`,borderRadius:14,padding:"14px 12px",textAlign:"center",boxShadow:unlocked?`0 0 16px ${C.orange}18`:"none",transition:"all 0.3s",opacity:unlocked?1:0.5}}>
+            <div key={a.id} style={{background:C.card,border:`1px solid ${unlocked?C.orange+"44":C.border}`,borderRadius:14,padding:"14px 12px",textAlign:"center",boxShadow:unlocked?`0 0 16px ${C.orange}18`:"none",opacity:unlocked?1:0.5,transition:"all 0.3s"}}>
               <div style={{fontSize:28,marginBottom:8,filter:unlocked?`drop-shadow(0 0 8px ${C.orange})`:"grayscale(1)"}}>{a.icon}</div>
               <div style={{fontSize:12,color:unlocked?C.text:C.muted,fontWeight:600,marginBottom:4}}>{a.title}</div>
               <div style={{fontSize:10,color:C.muted,lineHeight:1.4}}>{a.desc}</div>
-              {unlocked&&<div style={{marginTop:8,fontSize:9,color:C.orange,letterSpacing:2}}>✓ DESBLOQUEADO</div>}
+              {unlocked&&<div style={{marginTop:8,fontSize:9,color:C.orange,letterSpacing:2}}>✓ LOGRADO</div>}
             </div>
           );
         })}
@@ -344,33 +390,26 @@ function AchievementsScreen({stats,unlockedAchievements}){
   );
 }
 
-// ─── WATER TANK ───────────────────────────────────────────────────
-function WaterTank({water,setWater,addXP,waterXPGiven,setWaterXPGiven,arc}){
+function WaterTank({water,setWater,addXP,waterXPGiven,setWaterXPGiven,onWaterComplete}){
   const[pouring,setPouring]=useState(false);
   const[floatMsg,setFloatMsg]=useState(null);
   const isFull=water>=8;
-  const msg=WATER_MSGS[Math.min(water,8)];
   const pct=water/8;
 
   function addWater(){
-    if(isFull)return; // ANTI-CHEAT: blocked when full
+    if(isFull)return;
     const nw=water+1;
     setWater(nw);
-    setPouring(true);
-    setTimeout(()=>setPouring(false),700);
-    // XP only if not already given for this level
+    setPouring(true);setTimeout(()=>setPouring(false),700);
     if(!waterXPGiven){
       setFloatMsg({text:"+10 XP 💧",key:Date.now()});
       setTimeout(()=>setFloatMsg(null),1200);
       addXP(10,null,false);
       if(nw===8){
-        // ANTI-CHEAT: mark water XP as given for today, give bonus once
         setWaterXPGiven(true);
-        setTimeout(()=>setFloatMsg({text:"¡+50 XP BONUS! 💎",key:Date.now()+1}),400);
-        setTimeout(()=>addXP(50,null,false),400);
+        setTimeout(()=>{setFloatMsg({text:"¡+50 XP BONUS! 💎",key:Date.now()+1});addXP(50,null,false);onWaterComplete();},450);
       }
     }else{
-      // No XP message — just water tracking
       setFloatMsg({text:"💧",key:Date.now()});
       setTimeout(()=>setFloatMsg(null),600);
     }
@@ -378,17 +417,14 @@ function WaterTank({water,setWater,addXP,waterXPGiven,setWaterXPGiven,arc}){
 
   return(
     <div style={{background:C.card,border:`1px solid ${isFull?C.green+"66":C.border}`,borderRadius:16,padding:"16px 18px",marginBottom:12,boxShadow:isFull?`0 0 24px ${C.green}22`:"none",transition:"all 0.5s",position:"relative",overflow:"hidden"}}>
-      {floatMsg&&<div key={floatMsg.key} style={{position:"absolute",top:"50%",left:"50%",transform:"translateX(-50%)",zIndex:10,fontFamily:"'Cinzel',serif",fontSize:16,color:C.green,fontWeight:900,textShadow:`0 0 20px ${C.green}`,animation:"float-xp 1.2s ease forwards",pointerEvents:"none",whiteSpace:"nowrap"}}>{floatMsg.text}</div>}
+      {floatMsg&&<div key={floatMsg.key} style={{position:"absolute",top:"38%",left:"50%",transform:"translateX(-50%)",zIndex:10,fontFamily:"'Cinzel',serif",fontSize:16,color:C.green,fontWeight:900,textShadow:`0 0 20px ${C.green}`,animation:"float-xp 1.2s ease forwards",pointerEvents:"none",whiteSpace:"nowrap"}}>{floatMsg.text}</div>}
       <div style={{display:"flex",alignItems:"center",gap:20}}>
-        {/* Tank */}
         <div style={{position:"relative",flexShrink:0}}>
-          <svg width="90" height="90" viewBox="0 0 90 90" style={{transform:"rotate(-90deg)"}}>
-            <circle cx="45" cy="45" r="38" fill="none" stroke={C.border} strokeWidth="5"/>
-            <circle cx="45" cy="45" r="38" fill="none" stroke={isFull?C.green:C.green} strokeWidth="5"
-              strokeDasharray={`${2*Math.PI*38}`}
-              strokeDashoffset={`${2*Math.PI*38*(1-pct)}`}
-              strokeLinecap="round"
-              style={{transition:"stroke-dashoffset 0.6s ease",filter:isFull?`drop-shadow(0 0 8px ${C.green})`:undefined}}/>
+          <svg width="88" height="88" viewBox="0 0 88 88" style={{transform:"rotate(-90deg)"}}>
+            <circle cx="44" cy="44" r="36" fill="none" stroke={C.border} strokeWidth="5"/>
+            <circle cx="44" cy="44" r="36" fill="none" stroke={C.green} strokeWidth="5"
+              strokeDasharray={`${2*Math.PI*36}`} strokeDashoffset={`${2*Math.PI*36*(1-pct)}`}
+              strokeLinecap="round" style={{transition:"stroke-dashoffset 0.6s ease",filter:isFull?`drop-shadow(0 0 8px ${C.green})`:undefined}}/>
           </svg>
           <div style={{position:"absolute",inset:10,borderRadius:"50%",overflow:"hidden",background:C.bg,border:`2px solid ${C.border}`}}>
             <div style={{position:"absolute",bottom:0,left:0,right:0,height:`${pct*100}%`,background:isFull?`linear-gradient(180deg,${C.green}88,${C.green})`:"linear-gradient(180deg,#0ea5e988,#0369a1)",transition:"height 0.6s cubic-bezier(0.34,1.56,0.64,1)"}}>
@@ -400,11 +436,11 @@ function WaterTank({water,setWater,addXP,waterXPGiven,setWaterXPGiven,arc}){
         <div style={{flex:1}}>
           <div style={{fontSize:10,color:C.muted,letterSpacing:3,marginBottom:4}}>TANQUE DE HIDRATACIÓN</div>
           <div style={{fontFamily:"'Cinzel',serif",fontSize:22,color:isFull?C.green:C.text,marginBottom:4,textShadow:isFull?`0 0 12px ${C.green}`:undefined}}>{water}/8</div>
-          <div style={{fontSize:12,color:isFull?C.green:C.muted,lineHeight:1.5,marginBottom:12,fontStyle:"italic"}}>{msg}</div>
-          {isFull&&<div style={{fontSize:10,color:C.muted,marginBottom:8}}>🔒 Tanque completo · XP del día ya ganados</div>}
+          <div style={{fontSize:12,color:isFull?C.green:C.muted,lineHeight:1.5,marginBottom:10,fontStyle:"italic"}}>{WATER_MSGS[Math.min(water,8)]}</div>
+          {isFull&&<div style={{fontSize:10,color:C.muted,marginBottom:8}}>🔒 XP del día completados</div>}
           <div style={{display:"flex",gap:8}}>
             <button onClick={addWater} disabled={isFull} style={{flex:2,background:isFull?C.border:C.green,border:"none",borderRadius:10,padding:"10px",color:"#000",fontWeight:800,fontSize:13,cursor:isFull?"default":"pointer",fontFamily:"inherit",boxShadow:isFull?"none":`0 0 16px ${C.green}44`,transition:"all 0.3s",opacity:isFull?0.6:1}}>
-              💧 +Vaso {isFull?"✓":""}
+              💧 +Vaso{isFull?" ✓":""}
             </button>
             <button onClick={()=>setWater(w=>Math.max(0,w-1))} style={{flex:1,background:"transparent",border:`1px solid ${C.border}`,borderRadius:10,padding:"10px",color:C.muted,cursor:"pointer",fontSize:12,fontFamily:"inherit"}}>− Quitar</button>
           </div>
@@ -414,8 +450,7 @@ function WaterTank({water,setWater,addXP,waterXPGiven,setWaterXPGiven,arc}){
   );
 }
 
-// ─── Avatar ───────────────────────────────────────────────────────
-function HeroAvatar({archetype,level=1,size=200,animate=true,mood=3,darkDay=false,showFuture=false,epicDone=false,attrs={}}){
+function HeroAvatar({archetype,level=1,size=200,animate=true,mood=3,darkDay=false,showFuture=false,epicDone=false,attrs={},equipped=[]}){
   const a=ARCHETYPES.find(x=>x.id===archetype)||ARCHETYPES[0];
   const stage=STAGE_LEVELS.findLastIndex(l=>level>=l);
   const marks={warrior:"⚔",sage:"✦",explorer:"◎"};
@@ -426,12 +461,15 @@ function HeroAvatar({archetype,level=1,size=200,animate=true,mood=3,darkDay=fals
   const eyeW=mood<=1?4:mood>=4?3.2:3.5;
   const mp=mood<=1?"M 100 88 Q 110 84 120 88":mood>=4?"M 100 86 Q 110 92 120 86":"M 102 88 Q 110 90 118 88";
   const acc=getAcc(level,epicDone);
-  const hasWings=acc.some(a=>a.id==="light_wings");
-  const hasCrown=acc.some(a=>a.id==="crown");
-  const hasArmor=acc.some(a=>a.id==="full_armor");
-  const hasAura=acc.some(a=>a.id==="neon_aura");
-  const hasPads=acc.some(a=>a.id==="shoulder_pads");
+  const hasWings=acc.some(x=>x.id==="light_wings");
+  const hasCrown=acc.some(x=>x.id==="crown");
+  const hasArmor=acc.some(x=>x.id==="full_armor");
+  const hasAura=acc.some(x=>x.id==="neon_aura");
+  const hasPads=acc.some(x=>x.id==="shoulder_pads");
   const hybrid=getHybrid(archetype,attrs);
+  const hasFUEart=equipped.some(id=>ARTIFACTS.find(a=>a.id===id&&a.attr==="FUE"));
+  const hasSABart=equipped.some(id=>ARTIFACTS.find(a=>a.id===id&&a.attr==="SAB"));
+  const hasVOLart=equipped.some(id=>ARTIFACTS.find(a=>a.id===id&&a.attr==="VOL"));
   return(
     <svg width={size} height={size} viewBox="0 0 220 220" fill="none" style={{overflow:"visible"}}>
       <defs>
@@ -461,15 +499,16 @@ function HeroAvatar({archetype,level=1,size=200,animate=true,mood=3,darkDay=fals
       <ellipse cx="110" cy="115" rx="74" ry="90" fill={`url(#BL-${archetype}-${level})`} style={animate?{animation:darkDay?"dark-breathe 6s ease-in-out infinite":"aura-breathe 4s ease-in-out infinite"}:{}}/>
       <ellipse cx="110" cy="202" rx={46+stage*10} ry={11+stage*3} fill={`url(#GL-${archetype}-${level})`} style={animate?{animation:"ground-pulse 3s ease-in-out infinite"}:{}}/>
       {hasAura&&!darkDay&&<ellipse cx="110" cy="115" rx="92" ry="108" fill={ac} fillOpacity="0.08" stroke={ac} strokeWidth="1" strokeOpacity="0.3" style={{animation:"ring-spin 8s linear infinite"}}/>}
+      {hasFUEart&&!darkDay&&<ellipse cx="110" cy="115" rx="100" ry="116" fill="none" stroke={C.cta} strokeWidth="0.8" strokeOpacity="0.2" style={{animation:"ring-spin 12s linear infinite reverse"}}/>}
+      {hasSABart&&!darkDay&&<ellipse cx="110" cy="115" rx="105" ry="121" fill="none" stroke={C.green} strokeWidth="0.6" strokeOpacity="0.18" style={{animation:"ring-spin 17s linear infinite"}}/>}
+      {hasVOLart&&!darkDay&&<ellipse cx="110" cy="115" rx="110" ry="126" fill="none" stroke={C.purple} strokeWidth="0.5" strokeOpacity="0.16" style={{animation:"ring-spin 22s linear infinite reverse"}}/>}
       {showFuture&&!darkDay&&(
         <g opacity="0.11" style={{animation:"future-pulse 4s ease-in-out infinite"}}>
           <ellipse cx="110" cy="118" rx="88" ry="106" fill={ac} fillOpacity="0.06"/>
           <rect x="76" y="150" width="20" height="50" rx="10" fill={ac}/><rect x="124" y="150" width="20" height="50" rx="10" fill={ac}/>
           <rect x="70" y="98" width="80" height="60" rx="16" fill={ac}/>
           <ellipse cx="70" cy="112" rx="16" ry="13" fill={ac}/><ellipse cx="150" cy="112" rx="16" ry="13" fill={ac}/>
-          <ellipse cx="110" cy="70" rx="32" ry="34" fill={ac}/>
-          <ellipse cx="110" cy="36" rx="34" ry="12" fill={ac}/>
-          <ellipse cx="110" cy="110" rx="112" ry="112" stroke={ac} strokeWidth="1" fill="none"/>
+          <ellipse cx="110" cy="70" rx="32" ry="34" fill={ac}/><ellipse cx="110" cy="36" rx="34" ry="12" fill={ac}/>
         </g>
       )}
       {hasWings&&!darkDay&&(
@@ -522,7 +561,6 @@ function HeroAvatar({archetype,level=1,size=200,animate=true,mood=3,darkDay=fals
   );
 }
 
-// ─── Shared components ─────────────────────────────────────────────
 function XPBar({xp,xpNext,label=true}){
   return(
     <div>
@@ -553,48 +591,65 @@ function WhyBox({text,color}){
     </div>
   );
 }
+
 function XPBurst({xp,onDone}){
-  useEffect(()=>{const t=setTimeout(onDone,1200);return()=>clearTimeout(t);},[onDone]);
-  return<div style={{position:"fixed",top:"45%",left:"50%",zIndex:990,pointerEvents:"none",animation:"xp-burst 1.2s ease forwards"}}><div style={{fontFamily:"'Cinzel',serif",fontSize:32,color:C.green,fontWeight:900,textShadow:`0 0 30px ${C.green}`,whiteSpace:"nowrap"}}>+{xp} XP</div></div>;
+  useEffect(()=>{const t=setTimeout(onDone,1400);return()=>clearTimeout(t);},[onDone]);
+  return<div style={{position:"fixed",top:"40%",left:"50%",zIndex:990,pointerEvents:"none",animation:"xp-burst 1.4s ease forwards"}}><div style={{fontFamily:"'Cinzel',serif",fontSize:36,color:C.green,fontWeight:900,textShadow:`0 0 30px ${C.green},0 0 60px ${C.green}55`,whiteSpace:"nowrap"}}>+{xp} XP ⚡</div></div>;
 }
-function AttrGain({attrs,onDone}){
-  useEffect(()=>{const t=setTimeout(onDone,1600);return()=>clearTimeout(t);},[onDone]);
+
+function Confetti(){
+  const pieces=useMemo(()=>Array.from({length:30},(_,i)=>({id:i,x:Math.random()*100,color:[C.green,C.orange,C.purple,C.cta,"#fff"][i%5],sz:Math.random()*8+4,dur:Math.random()*1.5+1,delay:Math.random()*0.5})),[]);
   return(
-    <div style={{position:"fixed",top:"55%",left:"50%",transform:"translateX(-50%)",zIndex:989,pointerEvents:"none",display:"flex",gap:8,animation:"fade-up 1.6s ease forwards"}}>
+    <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:995,overflow:"hidden"}}>
+      {pieces.map(p=><div key={p.id} style={{position:"absolute",left:`${p.x}%`,top:-20,width:p.sz,height:p.sz,background:p.color,borderRadius:p.id%2===0?"50%":"2px",animation:`confetti-fall ${p.dur}s ${p.delay}s ease-in forwards`,opacity:0.85}}/>)}
+    </div>
+  );
+}
+
+function AttrGain({attrs,onDone}){
+  useEffect(()=>{const t=setTimeout(onDone,1800);return()=>clearTimeout(t);},[onDone]);
+  return(
+    <div style={{position:"fixed",top:"52%",left:"50%",transform:"translateX(-50%)",zIndex:989,pointerEvents:"none",display:"flex",gap:8,animation:"fade-up 1.8s ease forwards"}}>
       {Object.entries(attrs).filter(([k,v])=>v>0&&k!=="key").map(([k,v])=>(
         <div key={k} style={{background:C.card+"ee",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 10px",fontSize:11,color:k==="FUE"?C.cta:k==="SAB"?C.green:C.purple,fontWeight:700}}>+{v} {k}</div>
       ))}
     </div>
   );
 }
+
 function LevelUpToast({level,arc,archetype,titleInfo,newStage,onDone}){
-  useEffect(()=>{const t=setTimeout(onDone,4000);return()=>clearTimeout(t);},[onDone]);
+  const[showConfetti,setShowConfetti]=useState(true);
+  useEffect(()=>{const t=setTimeout(onDone,4800);return()=>clearTimeout(t);},[onDone]);
+  useEffect(()=>{const t=setTimeout(()=>setShowConfetti(false),2600);return()=>clearTimeout(t);},[]);
   return(
-    <div style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,backdropFilter:"blur(8px)"}}>
-      <div style={{textAlign:"center",animation:"pop-in 0.5s cubic-bezier(0.34,1.56,0.64,1)",maxWidth:320,padding:20}}>
-        <div style={{fontSize:52,marginBottom:10,filter:`drop-shadow(0 0 28px ${C.orange})`}}>⚡</div>
-        <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.orange,letterSpacing:6,marginBottom:4}}>¡NIVEL ALCANZADO!</div>
-        <div style={{fontFamily:"'Cinzel',serif",fontSize:82,color:C.text,lineHeight:1,textShadow:`0 0 60px ${C.orange},0 0 120px ${C.orange}55`}}>{level}</div>
-        <div style={{fontSize:16,color:C.green,marginTop:6,fontFamily:"'Cinzel',serif",letterSpacing:2,textShadow:`0 0 10px ${C.green}`}}>{titleInfo.title}</div>
-        <div style={{fontSize:12,color:C.muted,marginTop:4,letterSpacing:3}}>{titleInfo.rank}</div>
-        {newStage&&(
-          <div style={{marginTop:14,padding:"10px 16px",background:newStage.color+"18",border:`1px solid ${newStage.color}44`,borderRadius:12}}>
-            <div style={{fontSize:20,marginBottom:4}}>{newStage.icon}</div>
-            <div style={{fontSize:13,color:newStage.color,fontFamily:"'Cinzel',serif",letterSpacing:1}}>¡Nueva etapa desbloqueada!</div>
-            <div style={{fontSize:12,color:C.muted,marginTop:2}}>{newStage.label} — {newStage.sublabel}</div>
-          </div>
-        )}
-        <div style={{display:"flex",justifyContent:"center",marginTop:16}}><HeroAvatar archetype={archetype} level={level} size={90} animate={false}/></div>
+    <>
+      {showConfetti&&<Confetti/>}
+      <div style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,backdropFilter:"blur(8px)"}}>
+        <div style={{textAlign:"center",animation:"pop-in 0.5s cubic-bezier(0.34,1.56,0.64,1)",maxWidth:340,padding:20}}>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:12,color:C.orange,letterSpacing:7,marginBottom:6,textShadow:`0 0 20px ${C.orange}`}}>¡NIVEL ALCANZADO!</div>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:90,color:C.text,lineHeight:1,textShadow:`0 0 60px ${C.orange},0 0 120px ${C.orange}55`}}>{level}</div>
+          <div style={{fontSize:17,color:C.green,marginTop:8,fontFamily:"'Cinzel',serif",letterSpacing:2,textShadow:`0 0 10px ${C.green}`}}>{titleInfo.title}</div>
+          <div style={{fontSize:12,color:C.muted,marginTop:4,letterSpacing:3}}>{titleInfo.rank}</div>
+          {newStage&&(
+            <div style={{marginTop:16,padding:"12px 18px",background:newStage.color+"18",border:`1px solid ${newStage.color}44`,borderRadius:14,animation:"pop-in 0.4s 0.3s ease backwards"}}>
+              <div style={{fontSize:22,marginBottom:4}}>{newStage.icon}</div>
+              <div style={{fontSize:14,color:newStage.color,fontFamily:"'Cinzel',serif",letterSpacing:1}}>¡Nueva etapa desbloqueada!</div>
+              <div style={{fontSize:12,color:C.muted,marginTop:2}}>{newStage.label} — {newStage.sublabel}</div>
+            </div>
+          )}
+          <div style={{display:"flex",justifyContent:"center",marginTop:16}}><HeroAvatar archetype={archetype} level={level} size={90} animate={false}/></div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
+
 function StreakReward({reward,onDone}){
   useEffect(()=>{const t=setTimeout(onDone,3500);return()=>clearTimeout(t);},[onDone]);
   return(
     <div style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"center",justifyContent:"center",zIndex:998,backdropFilter:"blur(8px)"}}>
       <div style={{textAlign:"center",animation:"pop-in 0.5s ease",maxWidth:300,padding:24}}>
-        <div style={{fontSize:52,marginBottom:12,filter:`drop-shadow(0 0 20px ${C.orange})`}}>{reward.icon}</div>
+        <div style={{fontSize:56,marginBottom:12,filter:`drop-shadow(0 0 20px ${C.orange})`}}>{reward.icon}</div>
         <div style={{fontFamily:"'Cinzel',serif",fontSize:13,color:C.orange,letterSpacing:4,marginBottom:8}}>¡RACHA {reward.day} DÍAS!</div>
         <div style={{fontSize:28,color:C.text,fontFamily:"'Cinzel',serif",marginBottom:6}}>{reward.reward}</div>
         <div style={{fontSize:13,color:C.muted}}>Tu constancia tiene recompensa</div>
@@ -602,10 +657,11 @@ function StreakReward({reward,onDone}){
     </div>
   );
 }
+
 function AchievementToast({achievement,onDone}){
-  useEffect(()=>{const t=setTimeout(onDone,2800);return()=>clearTimeout(t);},[onDone]);
+  useEffect(()=>{const t=setTimeout(onDone,3000);return()=>clearTimeout(t);},[onDone]);
   return(
-    <div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",zIndex:997,animation:"slide-up-toast 2.8s ease forwards",maxWidth:300,width:"90%"}}>
+    <div style={{position:"fixed",bottom:90,left:"50%",transform:"translateX(-50%)",zIndex:997,animation:"slide-up-toast 3s ease forwards",maxWidth:310,width:"90%"}}>
       <div style={{background:C.card,border:`1px solid ${C.orange}55`,borderRadius:16,padding:"14px 18px",display:"flex",alignItems:"center",gap:12,boxShadow:`0 0 30px ${C.orange}33`}}>
         <div style={{fontSize:28,filter:`drop-shadow(0 0 8px ${C.orange})`}}>{achievement.icon}</div>
         <div>
@@ -617,14 +673,17 @@ function AchievementToast({achievement,onDone}){
     </div>
   );
 }
-function DarkDayScreen({arc,archetype,playerName,onMission,onDismiss}){
+
+function DarkDayScreen({archetype,playerName,onMission,onDismiss}){
   const[phase,setPhase]=useState(0);
   return(
-    <div style={{position:"fixed",inset:0,zIndex:980,background:"linear-gradient(180deg,#03030a 0%,#080810 60%,#0a0a14 100%)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28,overflow:"hidden"}}>
-      <div style={{position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none"}}>{Array.from({length:18},(_,i)=><div key={i} style={{position:"absolute",left:`${(i*5.5)%100}%`,top:-20,width:1,height:"100vh",background:"linear-gradient(to bottom,transparent,#4b556322,transparent)",animation:`rain-streak ${2+(i%5)*0.4}s ${i*0.22}s linear infinite`}}/>)}</div>
-      <button onClick={onDismiss} style={{position:"absolute",top:18,right:20,background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20}}>✕</button>
+    <div style={{position:"fixed",inset:0,zIndex:980,background:"linear-gradient(180deg,#030309 0%,#07080f 100%)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28,overflow:"hidden"}}>
+      <div style={{position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none"}}>
+        {Array.from({length:20},(_,i)=><div key={i} style={{position:"absolute",left:`${(i*5)%100}%`,top:-20,width:1,height:"100vh",background:"linear-gradient(to bottom,transparent,#4b556328,transparent)",animation:`rain-streak ${1.8+(i%5)*0.4}s ${i*0.2}s linear infinite`}}/>)}
+      </div>
+      <button onClick={onDismiss} style={{position:"absolute",top:18,right:20,background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:22}}>✕</button>
       {phase===0&&(
-        <div style={{textAlign:"center",maxWidth:340,animation:"fade-up 0.6s ease"}}>
+        <div style={{textAlign:"center",maxWidth:340,animation:"fade-up 0.6s ease",position:"relative",zIndex:2}}>
           <div style={{display:"flex",justifyContent:"center",marginBottom:16}}><HeroAvatar archetype={archetype} level={1} size={140} animate darkDay mood={1}/></div>
           <div style={{fontSize:9,color:C.muted,letterSpacing:5,marginBottom:10}}>MODO DÍA OSCURO</div>
           <h2 style={{fontFamily:"'Cinzel',serif",fontSize:22,color:"#94a3b8",letterSpacing:2,marginBottom:16,lineHeight:1.4}}>Los días oscuros forman parte del camino</h2>
@@ -636,8 +695,8 @@ function DarkDayScreen({arc,archetype,playerName,onMission,onDismiss}){
         </div>
       )}
       {phase===1&&(
-        <div style={{textAlign:"center",maxWidth:360,animation:"fade-up 0.4s ease"}}>
-          <div style={{fontSize:28,marginBottom:14,filter:`drop-shadow(0 0 16px ${C.purple})`}}>🌑</div>
+        <div style={{textAlign:"center",maxWidth:360,animation:"fade-up 0.4s ease",position:"relative",zIndex:2}}>
+          <div style={{fontSize:30,marginBottom:14,filter:`drop-shadow(0 0 16px ${C.purple})`}}>🌑</div>
           <div style={{fontSize:9,color:C.muted,letterSpacing:5,marginBottom:10}}>MISIÓN DE RECUPERACIÓN · +100 XP</div>
           <h3 style={{fontFamily:"'Cinzel',serif",fontSize:19,color:"#94a3b8",letterSpacing:2,marginBottom:20}}>El primer paso</h3>
           {["Toma un vaso de agua ahora mismo","Sal al exterior aunque sea 5 minutos","Escribe una cosa por la que estés vivo hoy"].map((s,i)=>(
@@ -647,28 +706,30 @@ function DarkDayScreen({arc,archetype,playerName,onMission,onDismiss}){
             </div>
           ))}
           <p style={{fontSize:12,color:C.muted,lineHeight:1.8,marginTop:16,marginBottom:24,fontStyle:"italic"}}>"El guerrero no es quien nunca cae.<br/>Es quien se levanta cada vez."</p>
-          <button onClick={()=>{onMission(100);onDismiss();}} style={{width:"100%",background:C.purple,border:"none",borderRadius:12,padding:"14px",color:"#000",fontFamily:"'Cinzel',serif",fontWeight:800,fontSize:13,cursor:"pointer",letterSpacing:1}}>✓ Completar misión (+100 XP)</button>
+          <button onClick={()=>{onMission(100);onDismiss();}} style={{width:"100%",background:C.purple,border:"none",borderRadius:12,padding:"14px",color:"#000",fontFamily:"'Cinzel',serif",fontWeight:800,fontSize:13,cursor:"pointer",letterSpacing:1}}>✓ Completar (+100 XP)</button>
         </div>
       )}
     </div>
   );
 }
-function RobotDiary({playerName,water,mood,doneMissions,totalMissions,attrs,arc,level}){
+
+function RobotDiary({playerName,water,mood,doneMissions,totalMissions,attrs,arc,level,equipped}){
   const[open,setOpen]=useState(false);
   const title=getLevelTitle(level);
   const msg=useMemo(()=>{
     if(mood<=1)return`Navegante ${playerName}... detecto energía baja. Una acción pequeña puede cambiar el rumbo.`;
-    if(water<3)return`Navegante ${playerName}, mis sensores detectan deshidratación. ¿Un vaso de agua ahora?`;
+    if(water<3)return`Navegante ${playerName}, mis sensores detectan deshidratación crítica. ¿Un vaso ahora?`;
+    if(equipped.length===0)return`Navegante ${playerName}, aún sin artefactos. ¡Ve al Arsenal y potencia tus atributos!`;
     if(doneMissions===0)return`¡Bienvenido de nuevo, Navegante ${playerName}! El camino espera. Completa tu primera misión.`;
-    if(doneMissions===totalMissions)return`¡Extraordinario, Navegante ${playerName}! Misiones completas. Tu aura se intensifica. Eres digno de "${title.title}".`;
+    if(doneMissions===totalMissions)return`¡Extraordinario, Navegante ${playerName}! Misiones completas. Eres digno de "${title.title}".`;
     if(attrs.SAB>attrs.FUE&&attrs.SAB>attrs.VOL)return`Navegante ${playerName}, tu Sabiduría domina. El Sabio que llevas dentro está despertando.`;
-    if(attrs.FUE>attrs.SAB&&attrs.FUE>attrs.VOL)return`Navegante ${playerName}, tu Fuerza es innegable. El cuerpo que forjas hoy es el escudo de tu futuro.`;
-    return`Navegante ${playerName} — ${doneMissions}/${totalMissions} misiones. Cada paso cuenta.`;
-  },[mood,water,doneMissions,totalMissions,attrs,playerName,title,level]);
+    if(attrs.FUE>attrs.SAB&&attrs.FUE>attrs.VOL)return`Navegante ${playerName}, tu Fuerza es innegable. El cuerpo que forjas hoy es tu escudo.`;
+    return`Navegante ${playerName} — ${doneMissions}/${totalMissions} misiones. Cada paso cuenta, aunque no lo parezca.`;
+  },[mood,water,doneMissions,totalMissions,attrs,playerName,title,level,equipped.length]);
   return(
     <div style={{background:C.card,border:`1px solid ${arc?.aura||C.green}33`,borderRadius:16,padding:"14px 16px",marginBottom:12,cursor:"pointer"}} onClick={()=>setOpen(o=>!o)}>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <div style={{width:36,height:36,borderRadius:10,background:arc?.aura+"18"||C.green+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,filter:`drop-shadow(0 0 6px ${arc?.aura||C.green})`}}>🤖</div>
+        <div style={{width:36,height:36,borderRadius:10,background:(arc?.aura||C.green)+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,filter:`drop-shadow(0 0 6px ${arc?.aura||C.green})`}}>🤖</div>
         <div style={{flex:1}}>
           <div style={{fontSize:10,color:arc?.aura||C.green,letterSpacing:2,marginBottom:1}}>DIARIO DEL ROBOT</div>
           <div style={{fontSize:12,color:C.muted}}>{open?"Toca para cerrar":"💬 ¿Qué dice tu robot hoy?"}</div>
@@ -676,7 +737,7 @@ function RobotDiary({playerName,water,mood,doneMissions,totalMissions,attrs,arc,
         <div style={{fontSize:18,color:C.muted,transition:"transform 0.3s",transform:open?"rotate(180deg)":"none"}}>⌄</div>
       </div>
       {open&&(
-        <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${arc?.aura||C.green}18`}}>
+        <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${(arc?.aura||C.green)}18`}}>
           <p style={{fontSize:13,color:C.text,lineHeight:1.85,fontStyle:"italic"}}>"{msg}"</p>
           <div style={{marginTop:6,fontSize:10,color:C.muted}}>— Robot · {title.title} · {title.rank}</div>
         </div>
@@ -684,6 +745,7 @@ function RobotDiary({playerName,water,mood,doneMissions,totalMissions,attrs,arc,
     </div>
   );
 }
+
 function MedDisclaimer({onAccept}){
   return(
     <div style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"center",justifyContent:"center",zIndex:998,padding:20,backdropFilter:"blur(4px)"}}>
@@ -697,12 +759,13 @@ function MedDisclaimer({onAccept}){
     </div>
   );
 }
+
 function Tutorial({onDone}){
   const STEPS=[
-    {icon:"🗺",title:"Mapa del Viaje",desc:"Tu robot camina por el mapa cada vez que subes de nivel. 7 etapas épicas te esperan desde Origen hasta Leyenda."},
-    {icon:"◈",title:"Misiones + Épicas",desc:"Las ÉPICAS desbloquean los efectos más brillantes. Fáciles, normales y épicas — cada una da atributos distintos."},
-    {icon:"🏆",title:"Logros",desc:"15 trofeos que coleccionar. Algunos fáciles al inicio, otros legendarios. ¿Puedes desbloquearlos todos?"},
-    {icon:"🔥",title:"Rachas con Recompensa",desc:"Días 7, 14 y 30 de racha consecutiva = XP bonus especial. La constancia tiene su recompensa."},
+    {icon:"🗺",title:"Mapa del Viaje",desc:"Tu nave espacial avanza al subir de nivel. 7 etapas épicas desde Origen hasta Leyenda."},
+    {icon:"⚙",title:"Arsenal de Artefactos",desc:"Equipa casco, guantes, gafas y más. Cada artefacto da bonus permanente a tus atributos."},
+    {icon:"🏆",title:"15 Logros",desc:"Colecciona logros fáciles, medios y legendarios. Desbloquean automáticamente."},
+    {icon:"🔥",title:"Rachas + Recompensas",desc:"Racha de 7, 14 o 30 días = XP bonus especial. El tanque de agua se vincula con tus misiones."},
   ];
   const[idx,setIdx]=useState(0);const s=STEPS[idx];
   return(
@@ -725,10 +788,8 @@ function Tutorial({onDone}){
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// MAIN APP
-// ══════════════════════════════════════════════════════════════════
 export default function App(){
+  const[showHero,setShowHero]=useState(true);
   const[step,setStep]=useState(0);
   const[profile,setProfile]=useState({name:"",age:"",weight:"",height:"",sleep:"7",stress:"5",conditions:[],goals:[],archetype:null});
   const[player,setPlayer]=useState(null);
@@ -738,13 +799,14 @@ export default function App(){
   const[mood,setMood]=useState(null);
   const[moodLog,setMoodLog]=useState([]);
   const[water,setWater]=useState(0);
-  const[waterXPGiven,setWaterXPGiven]=useState(false); // ANTI-CHEAT
+  const[waterXPGiven,setWaterXPGiven]=useState(false);
   const[attrs,setAttrs]=useState({FUE:0,SAB:0,VOL:0});
   const[totalXP,setTotalXP]=useState(0);
   const[epicDone,setEpicDone]=useState(false);
+  const[equipped,setEquipped]=useState([]);
   const[unlockedAchievements,setUnlockedAchievements]=useState([]);
   const[totalMissionsCompleted,setTotalMissionsCompleted]=useState(0);
-  const[waterCompleted,setWaterCompleted]=useState(0); // days tank was filled
+  const[waterCompleted,setWaterCompleted]=useState(0);
   const[moodDays,setMoodDays]=useState(0);
   const[dayPerfect,setDayPerfect]=useState(0);
   const[showLevelUp,setShowLevelUp]=useState(false);
@@ -753,7 +815,6 @@ export default function App(){
   const[showDisclaimer,setShowDisclaimer]=useState(false);
   const[showTutorial,setShowTutorial]=useState(false);
   const[showDarkDay,setShowDarkDay]=useState(false);
-  const[showWeekly,setShowWeekly]=useState(false);
   const[xpBurst,setXpBurst]=useState(null);
   const[attrGain,setAttrGain]=useState(null);
   const[completedAnim,setCompletedAnim]=useState(null);
@@ -772,7 +833,7 @@ export default function App(){
     const s=load();
     if(s){
       if(s.profile)setProfile(s.profile);
-      if(s.player){setPlayer(s.player);setStep(5);}
+      if(s.player){setPlayer(s.player);setStep(5);setShowHero(false);}
       if(s.missions)setMissions(s.missions);
       if(s.customGoals)setCustomGoals(s.customGoals);
       if(s.water!==undefined)setWater(s.water);
@@ -781,6 +842,7 @@ export default function App(){
       if(s.attrs)setAttrs(s.attrs);
       if(s.totalXP!==undefined)setTotalXP(s.totalXP);
       if(s.epicDone)setEpicDone(s.epicDone);
+      if(s.equipped)setEquipped(s.equipped);
       if(s.unlockedAchievements)setUnlockedAchievements(s.unlockedAchievements);
       if(s.totalMissionsCompleted)setTotalMissionsCompleted(s.totalMissionsCompleted);
       if(s.waterCompleted)setWaterCompleted(s.waterCompleted);
@@ -791,33 +853,32 @@ export default function App(){
 
   useEffect(()=>{
     if(step<5&&!player)return;
-    save({profile,player,missions,customGoals,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect});
-  },[profile,player,missions,customGoals,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect]);
+    save({profile,player,missions,customGoals,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,equipped,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect});
+  },[profile,player,missions,customGoals,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,equipped,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect]);
 
-  // Star mission
   useEffect(()=>{
     if(!player)return;
-    const delay=(8+Math.random()*7)*60*1000;
+    const delay=(7+Math.random()*8)*60*1000;
     const t=setTimeout(()=>{
       const m=STAR_MISSIONS[Math.floor(Math.random()*STAR_MISSIONS.length)];
       setStarMission(m);setStarTimer(90);
+      clearInterval(starRef.current);
       starRef.current=setInterval(()=>setStarTimer(t=>{if(t<=1){clearInterval(starRef.current);setStarMission(null);return 0;}return t-1;}),1000);
     },delay);
     return()=>{clearTimeout(t);clearInterval(starRef.current);};
   },[player?.level]);
 
-  // Check achievements whenever stats change
   useEffect(()=>{
     if(!player)return;
-    const stats={level:player.level,streak:player.streak,totalXP,epicDone,attrs,totalMissions:totalMissionsCompleted,waterCompleted,moodDays,dayPerfect};
+    const stats={level:player.level,streak:player.streak,totalXP,epicDone,attrs,totalMissions:totalMissionsCompleted,waterCompleted,moodDays,dayPerfect,equippedCount:equipped.length};
     ACHIEVEMENTS.forEach(a=>{
       if(!unlockedAchievements.includes(a.id)&&a.check(stats)){
         setUnlockedAchievements(prev=>[...prev,a.id]);
         setAchievementToast(a);
-        setTimeout(()=>setAchievementToast(null),2800);
+        setTimeout(()=>setAchievementToast(null),3000);
       }
     });
-  },[player?.level,player?.streak,totalXP,epicDone,attrs,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect]);
+  },[player?.level,player?.streak,totalXP,epicDone,attrs,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect,equipped.length]);
 
   const arc=ARCHETYPES.find(a=>a.id===(profile.archetype||player?.archetype||"explorer"));
   const lowMoodStreak=moodLog.length>=3&&moodLog.slice(-3).every(m=>m.v<=1);
@@ -829,12 +890,11 @@ export default function App(){
   const bmiLabel=!bmi?"":bmi<18.5?"Bajo peso":bmi<25?"Normal":bmi<30?"Sobrepeso":"Obesidad";
   const bmiColor=!bmi?C.muted:bmi<18.5?"#60a5fa":bmi<25?C.green:bmi<30?C.orange:"#f87171";
   const waterGoal=Math.round((parseFloat(profile.weight)||70)*0.033*10)/10;
+  const artifactBonus={FUE:getArtifactBonus(equipped,"FUE"),SAB:getArtifactBonus(equipped,"SAB"),VOL:getArtifactBonus(equipped,"VOL")};
 
   function toggleArr(k,v){setProfile(p=>({...p,[k]:p[k].includes(v)?p[k].filter(x=>x!==v):[...p[k],v]}));}
-
   function finishSetup(){
-    const a=ARCHETYPES.find(x=>x.id===profile.archetype);
-    setPlayer({name:profile.name,archetype:profile.archetype,level:1,xp:0,xpNext:100,streak:1,stats:{...a.stat},joinedAt:new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})});
+    setPlayer({name:profile.name,archetype:profile.archetype,level:1,xp:0,xpNext:100,streak:1,joinedAt:new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})});
     setShowDisclaimer(true);
   }
 
@@ -851,45 +911,55 @@ export default function App(){
       const nx=p.xp+gain,up=nx>=p.xpNext,nl=up?p.level+1:p.level;
       if(up){
         setNewLevel(nl);
-        // Check if new map stage unlocked
-        const prevStageIdx=MAP_STAGES.findLastIndex(s=>p.level>=s.minLevel);
-        const newStageIdx=MAP_STAGES.findLastIndex(s=>nl>=s.minLevel);
-        if(newStageIdx>prevStageIdx)setNewStageUnlocked(MAP_STAGES[newStageIdx]);
-        else setNewStageUnlocked(null);
+        const prevI=MAP_STAGES.findLastIndex(s=>p.level>=s.minLevel);
+        const nextI=MAP_STAGES.findLastIndex(s=>nl>=s.minLevel);
+        setNewStageUnlocked(nextI>prevI?MAP_STAGES[nextI]:null);
         setShowLevelUp(true);
-        // Check streak rewards
-        STREAK_REWARDS.forEach(r=>{
-          if(p.streak===r.day){setStreakReward(r);setTimeout(()=>addXP(r.xp,null,true),4200);}
-        });
+        STREAK_REWARDS.forEach(r=>{if(p.streak===r.day){setStreakReward(r);setTimeout(()=>addXP(r.xp,null,true),5000);}});
+        // Fire star after level up
+        setTimeout(()=>{
+          const m=STAR_MISSIONS[Math.floor(Math.random()*STAR_MISSIONS.length)];
+          setStarMission(m);setStarTimer(90);
+          clearInterval(starRef.current);
+          starRef.current=setInterval(()=>setStarTimer(t=>{if(t<=1){clearInterval(starRef.current);setStarMission(null);return 0;}return t-1;}),1000);
+        },4500);
       }
       return{...p,xp:up?nx-p.xpNext:nx,xpNext:up?Math.round(p.xpNext*1.5):p.xpNext,level:nl};
     });
   }
 
+  function onWaterComplete(){
+    setWaterCompleted(w=>w+1);
+    const idx=missions.findIndex(m=>m.id===3);
+    if(idx>=0&&!missions[idx].done){
+      setMissions(ms=>ms.map((x,i)=>i===idx?{...x,done:true}:x));
+      setCompletedAnim(idx);setTimeout(()=>setCompletedAnim(null),700);
+      setTotalMissionsCompleted(t=>t+1);
+    }
+  }
+
   function completeMission(idx){
     if(missions[idx].done)return;
     const m=missions[idx];
+    if(m.id===3&&water<8)return;
     setMissions(ms=>ms.map((x,i)=>i===idx?{...x,done:true}:x));
     setCompletedAnim(idx);setTimeout(()=>setCompletedAnim(null),700);
     if(m.difficulty==="epic")setEpicDone(true);
-    const newTotal=totalMissionsCompleted+1;
-    setTotalMissionsCompleted(newTotal);
-    const newDone=doneMissions+1;
-    if(newDone===missions.length){setDayPerfect(d=>d+1);}
+    setTotalMissionsCompleted(t=>t+1);
+    if(doneMissions+1===missions.length)setDayPerfect(d=>d+1);
     addXP(m.xp,m.id);
   }
 
   function logMood(v){
     setMood(v);
     const nl=[...moodLog.slice(-11),{v,t:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}];
-    setMoodLog(nl);
-    setMoodDays(d=>d+1);
+    setMoodLog(nl);setMoodDays(d=>d+1);
     if(nl.length>=3&&nl.slice(-3).every(m=>m.v<=1))setTimeout(()=>setShowDarkDay(true),800);
   }
 
   function resetDay(){
     setMissions(MISSIONS_DATA.map(m=>({...m,done:false})));
-    setWater(0);setMood(null);setWaterXPGiven(false); // ANTI-CHEAT: reset daily water XP lock
+    setWater(0);setMood(null);setWaterXPGiven(false);
     setPlayer(p=>p?{...p,streak:p.streak+1}:p);
   }
 
@@ -904,10 +974,10 @@ export default function App(){
 
   function genWeeklyMissions(type){
     const plans={
-      weight:[{text:"Registra tu peso hoy",xp:10},{text:"Elimina refrescos esta semana",xp:30},{text:"Camina 30 min (3 veces)",xp:40},{text:"Verduras en cada comida",xp:20}],
-      marathon:[{text:"Corre 2km sin parar",xp:30},{text:"Ejercicios de pierna (2 días)",xp:25},{text:"Duerme 8h para recuperación",xp:20},{text:"Elige ruta de entrenamiento",xp:25}],
-      sleep:[{text:"Duerme a la misma hora 5 días",xp:40},{text:"Sin pantallas 1h antes de dormir",xp:30},{text:"Oscuridad total en tu cuarto",xp:15},{text:"Anota calidad de sueño",xp:15}],
-      muscle:[{text:"Entrena 3 días (fuerza)",xp:50},{text:"Proteína en cada comida",xp:25},{text:"Duerme 8h para síntesis muscular",xp:25}],
+      weight:[{text:"Registra tu peso hoy",xp:10},{text:"Elimina refrescos",xp:30},{text:"Camina 30 min (3 veces)",xp:40},{text:"Verduras en cada comida",xp:20}],
+      marathon:[{text:"Corre 2km sin parar",xp:30},{text:"Piernas (2 días)",xp:25},{text:"Duerme 8h",xp:20},{text:"Elige ruta",xp:25}],
+      sleep:[{text:"Duerme a la misma hora 5 días",xp:40},{text:"Sin pantallas 1h antes",xp:30},{text:"Oscuridad total",xp:15},{text:"Anota calidad",xp:15}],
+      muscle:[{text:"Entrena 3 días (fuerza)",xp:50},{text:"Proteína en cada comida",xp:25},{text:"Duerme 8h",xp:25}],
       custom:[{text:"Define 3 acciones concretas",xp:20},{text:"Toma la primera acción hoy",xp:40},{text:"Registra tu avance",xp:20},{text:"Comparte tu meta",xp:20}],
     };
     return(plans[type]||plans.custom).map(m=>({...m,done:false}));
@@ -925,6 +995,34 @@ export default function App(){
     addXP(xp);
   }
 
+  // HERO INTRO
+  if(showHero) return(
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",color:C.text,padding:"32px 20px",position:"relative",overflow:"hidden"}}>
+      <StarField/>
+      <div style={{position:"relative",zIndex:1,textAlign:"center",maxWidth:480}}>
+        <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
+          <HeroAvatar archetype="explorer" level={12} size={178} mood={4} showFuture animate/>
+        </div>
+        <div style={{fontSize:10,color:C.muted,letterSpacing:7,marginBottom:14}}>TU VIDA COMO UN RPG</div>
+        <h1 style={{fontFamily:"'Cinzel',serif",fontSize:42,fontWeight:900,color:C.text,lineHeight:1.05,marginBottom:12,textShadow:`0 0 40px ${C.green}44`}}>
+          SUBE DE NIVEL<br/><span style={{color:C.green,textShadow:`0 0 30px ${C.green}`}}>EN LA VIDA REAL</span>
+        </h1>
+        <p style={{fontSize:15,color:C.muted,lineHeight:1.75,marginBottom:8}}>Tu robot evoluciona cuando tú evolucionas.</p>
+        <p style={{fontSize:13,color:C.muted,marginBottom:36}}>Misión = <span style={{color:C.green,fontWeight:700}}>+XP</span> · <span style={{color:C.cta,fontWeight:700}}>Atributos</span> · <span style={{color:C.purple,fontWeight:700}}>Nivel</span></p>
+        <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",marginBottom:36}}>
+          {[["🗺","Mapa galáctico"],["⚙","Arsenal RPG"],["🏆","15 Logros"],["🌟","Estrella Fugaz"],["🌑","Día Oscuro"]].map(([ic,lb])=>(
+            <div key={lb} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:20,padding:"6px 14px",fontSize:12,color:C.muted}}>{ic} {lb}</div>
+          ))}
+        </div>
+        <button style={{width:"100%",background:`linear-gradient(135deg,${C.cta},${C.orange})`,border:"none",borderRadius:14,padding:"18px",color:"#000",fontFamily:"'Cinzel',serif",fontWeight:900,fontSize:16,cursor:"pointer",letterSpacing:1,boxShadow:`0 0 40px ${C.cta}55`,marginBottom:14,animation:"cta-pulse 3s ease-in-out infinite"}} onClick={()=>setShowHero(false)}>
+          CREAR MI ROBOT GRATIS →
+        </button>
+        <div style={{fontSize:12,color:C.muted}}>✦ Ya hay +2.847 viajeros subiendo de nivel</div>
+      </div>
+      <style>{CSS}</style>
+    </div>
+  );
+
   // SETUP
   if(step<5) return(
     <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"flex-start",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",color:C.text,padding:"32px 16px 60px",overflowY:"auto",position:"relative"}}>
@@ -933,22 +1031,10 @@ export default function App(){
       <div style={{width:"100%",maxWidth:step===4?880:480,position:"relative",zIndex:1}}>
         {step===0&&(
           <div style={{textAlign:"center"}}>
-            <div style={{display:"flex",justifyContent:"center",marginBottom:24}}><HeroAvatar archetype="explorer" level={10} size={170} mood={4} showFuture/></div>
-            <div style={{fontSize:10,color:C.muted,letterSpacing:6,marginBottom:12}}>TU VIDA COMO UN RPG</div>
-            <h1 style={{fontFamily:"'Cinzel',serif",fontSize:38,fontWeight:900,color:C.text,lineHeight:1.1,marginBottom:10,textShadow:`0 0 40px ${C.green}44`}}>
-              SUBE DE NIVEL<br/><span style={{color:C.green,textShadow:`0 0 30px ${C.green}`}}>EN LA VIDA REAL</span>
-            </h1>
-            <p style={{fontSize:15,color:C.muted,lineHeight:1.7,marginBottom:6}}>Tu robot evoluciona cuando tú evolucionas.</p>
-            <p style={{fontSize:13,color:C.muted,marginBottom:32}}>Cada misión = <span style={{color:C.green,fontWeight:700}}>+XP</span> + <span style={{color:C.cta,fontWeight:700}}>Atributos</span> + <span style={{color:C.purple,fontWeight:700}}>Nivel</span></p>
-            <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",marginBottom:32}}>
-              {[["🗺","Mapa del Viaje"],["🏆","15 Logros"],["🔥","Rachas con recompensa"],["🌟","Estrella Fugaz"],["🌑","Modo Día Oscuro"]].map(([ic,lb])=>(
-                <div key={lb} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:20,padding:"6px 14px",fontSize:12,color:C.muted}}>{ic} {lb}</div>
-              ))}
-            </div>
-            <button style={{width:"100%",background:`linear-gradient(135deg,${C.cta},${C.orange})`,border:"none",borderRadius:14,padding:"18px",color:"#000",fontFamily:"'Cinzel',serif",fontWeight:900,fontSize:16,cursor:"pointer",letterSpacing:1,boxShadow:`0 0 40px ${C.cta}55`,marginBottom:12,animation:"cta-pulse 3s ease-in-out infinite"}} onClick={()=>setStep(1)}>
-              CREAR MI ROBOT GRATIS →
-            </button>
-            <div style={{fontSize:12,color:C.muted}}>✦ Ya hay +2.847 viajeros subiendo de nivel</div>
+            <div style={{display:"flex",justifyContent:"center",marginBottom:24}}><HeroAvatar archetype="explorer" level={10} size={160} mood={4} showFuture/></div>
+            <h1 style={{fontFamily:"'Cinzel',serif",fontSize:36,fontWeight:900,color:C.text,lineHeight:1.1,marginBottom:12}}>THE JOURNEY</h1>
+            <p style={{fontSize:14,color:C.muted,lineHeight:1.8,marginBottom:32}}>Cada hábito real = XP real. Tu robot, tu viaje.</p>
+            <button style={{...S.btn,background:`linear-gradient(135deg,${C.cta},${C.orange})`,boxShadow:`0 0 30px ${C.cta}44`,animation:"cta-pulse 3s ease-in-out infinite"}} onClick={()=>setStep(1)}>Comenzar el viaje →</button>
           </div>
         )}
         {step===1&&(
@@ -956,7 +1042,7 @@ export default function App(){
             <div style={S.badge}>1 DE 4 · IDENTIDAD</div>
             <h2 style={S.stitle}>¿Cómo te llamamos, Viajero?</h2>
             <p style={S.ssub}>Tu misión personalizada empieza aquí</p>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12,marginBottom:18}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(175px,1fr))",gap:12,marginBottom:18}}>
               {[["Nombre o alias","name","text","¿Cómo te llamamos?"],["Edad","age","number","años"],["Peso (kg)","weight","number","kg"],["Talla (cm)","height","number","cm"]].map(([lbl,key,type,ph])=>(
                 <div key={key}><label style={S.label}>{lbl}</label><input style={S.input} type={type} placeholder={ph} value={profile[key]} onChange={e=>setProfile(p=>({...p,[key]:e.target.value}))}/></div>
               ))}
@@ -993,13 +1079,13 @@ export default function App(){
               <h2 style={{fontFamily:"'Cinzel',serif",fontSize:28,color:C.text,letterSpacing:3,marginBottom:8}}>Elige tu arquetipo</h2>
               <p style={{fontSize:13,color:C.muted}}>Tu origen define tus atributos dominantes</p>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:16,marginBottom:28}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:16,marginBottom:28}}>
               {ARCHETYPES.map(a=>{
                 const sel=profile.archetype===a.id;
                 return(
                   <div key={a.id} onClick={()=>setProfile(p=>({...p,archetype:a.id}))} style={{background:C.card,border:`1px solid ${sel?a.aura+"55":C.border}`,borderRadius:18,padding:"24px 16px 20px",cursor:"pointer",transition:"all 0.35s",boxShadow:sel?`0 0 40px ${a.aura}25`:"none",transform:sel?"translateY(-6px)":"none",textAlign:"center",position:"relative"}}>
                     {sel&&<div style={{position:"absolute",inset:0,borderRadius:18,background:`radial-gradient(ellipse at 50% 0%, ${a.aura}10, transparent 70%)`,pointerEvents:"none"}}/>}
-                    <div style={{display:"flex",justifyContent:"center",marginBottom:14}}><HeroAvatar archetype={a.id} level={sel?32:1} size={100} animate={sel} mood={sel?4:3}/></div>
+                    <div style={{display:"flex",justifyContent:"center",marginBottom:14}}><HeroAvatar archetype={a.id} level={sel?14:1} size={100} animate={sel} mood={sel?4:3}/></div>
                     <div style={{fontSize:11,color:a.aura,letterSpacing:3,textTransform:"uppercase",marginBottom:5}}>{a.icon} {a.name}</div>
                     <div style={{fontSize:10,color:C.muted,marginBottom:6}}>{a.sub}</div>
                     <div style={{fontSize:10,color:a.aura+"88",marginBottom:10}}>Dominante: {a.mainAttr}</div>
@@ -1025,20 +1111,19 @@ export default function App(){
   return(
     <div style={{display:"flex",height:"100vh",background:C.bg,fontFamily:"'DM Sans',sans-serif",color:C.text,overflow:"hidden",position:"relative"}}>
       <StarField/>
-      {showLevelUp&&<LevelUpToast level={newLevel} arc={arc} archetype={player.archetype} titleInfo={getLevelTitle(newLevel)} newStage={newStageUnlocked} onDone={()=>{setShowLevelUp(false);if(streakReward)setStreakReward(null);}}/>}
+      {showLevelUp&&<LevelUpToast level={newLevel} arc={arc} archetype={player.archetype} titleInfo={getLevelTitle(newLevel)} newStage={newStageUnlocked} onDone={()=>setShowLevelUp(false)}/>}
       {streakReward&&!showLevelUp&&<StreakReward reward={streakReward} onDone={()=>setStreakReward(null)}/>}
       {achievementToast&&<AchievementToast achievement={achievementToast} onDone={()=>setAchievementToast(null)}/>}
       {showTutorial&&<Tutorial onDone={()=>setShowTutorial(false)}/>}
-      {showDarkDay&&<DarkDayScreen arc={arc} archetype={player.archetype} playerName={player.name} onMission={xp=>addXP(xp)} onDismiss={()=>setShowDarkDay(false)}/>}
+      {showDarkDay&&<DarkDayScreen archetype={player.archetype} playerName={player.name} onMission={xp=>addXP(xp)} onDismiss={()=>setShowDarkDay(false)}/>}
       {xpBurst&&<XPBurst xp={xpBurst.xp} onDone={()=>setXpBurst(null)}/>}
       {attrGain&&<AttrGain attrs={attrGain} onDone={()=>setAttrGain(null)}/>}
 
-      {/* Sidebar */}
       <nav style={{width:60,background:C.card+"cc",backdropFilter:"blur(8px)",borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"12px 0",gap:2,flexShrink:0,position:"relative",zIndex:10}}>
-        <div style={{fontSize:15,color:C.green,fontFamily:"'Cinzel',serif",marginBottom:12,textShadow:`0 0 10px ${C.green}`}}>◈</div>
+        <div style={{fontSize:14,color:C.green,fontFamily:"'Cinzel',serif",marginBottom:12,textShadow:`0 0 10px ${C.green}`}}>◈</div>
         {NAV.map(n=>(
-          <button key={n.id} onClick={()=>setTab(n.id)} style={{width:46,height:50,border:"none",borderRadius:11,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,background:tab===n.id?C.green+"22":"transparent",color:tab===n.id?C.green:C.muted,transition:"all 0.2s",fontFamily:"inherit",boxShadow:tab===n.id?`0 0 12px ${C.green}33`:"none"}}>
-            <span style={{fontSize:15}}>{n.icon}</span><span style={{fontSize:7.5}}>{n.l}</span>
+          <button key={n.id} onClick={()=>setTab(n.id)} style={{width:46,height:48,border:"none",borderRadius:11,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,background:tab===n.id?C.green+"22":"transparent",color:tab===n.id?C.green:C.muted,transition:"all 0.2s",fontFamily:"inherit",boxShadow:tab===n.id?`0 0 12px ${C.green}33`:"none"}}>
+            <span style={{fontSize:14}}>{n.icon}</span><span style={{fontSize:7}}>{n.l}</span>
           </button>
         ))}
         {lowMoodStreak&&<button onClick={()=>setShowDarkDay(true)} style={{width:42,height:42,border:`1px solid ${C.purple}33`,borderRadius:10,background:C.purple+"10",color:C.purple,cursor:"pointer",fontSize:14,marginTop:4,animation:"pulse-soft 2s ease-in-out infinite"}}>🌑</button>}
@@ -1049,86 +1134,84 @@ export default function App(){
 
       <main style={{flex:1,overflow:"auto",position:"relative",zIndex:1}}>
 
-        {/* HOME */}
         {tab==="home"&&(
           <div>
-            <div style={{position:"relative",background:arc.bg,borderBottom:`1px solid ${arc.aura}20`,padding:"22px 18px 0",overflow:"hidden"}}>
-              <div style={{position:"absolute",top:-60,right:-60,width:240,height:240,borderRadius:"50%",background:`radial-gradient(circle,${arc.aura}0c,transparent 70%)`,pointerEvents:"none"}}/>
+            <div style={{position:"relative",background:arc.bg,borderBottom:`1px solid ${arc.aura}20`,padding:"20px 16px 0",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:-60,right:-60,width:220,height:220,borderRadius:"50%",background:`radial-gradient(circle,${arc.aura}0c,transparent 70%)`,pointerEvents:"none"}}/>
               <div style={{display:"flex",alignItems:"flex-end",gap:6,maxWidth:660,margin:"0 auto"}}>
                 <div style={{flexShrink:0,marginBottom:-10}}>
-                  <HeroAvatar archetype={player.archetype} level={player.level} size={162} animate mood={currentMood} showFuture epicDone={epicDone} attrs={attrs}/>
+                  <HeroAvatar archetype={player.archetype} level={player.level} size={156} animate mood={currentMood} showFuture epicDone={epicDone} attrs={attrs} equipped={equipped}/>
                 </div>
-                <div style={{flex:1,paddingBottom:22,paddingLeft:6}}>
-                  <div style={{fontSize:10,color:C.green,letterSpacing:3,marginBottom:1,textShadow:`0 0 8px ${C.green}`}}>¡BIENVENIDO DE NUEVO!</div>
+                <div style={{flex:1,paddingBottom:20,paddingLeft:6}}>
+                  <div style={{fontSize:10,color:C.green,letterSpacing:3,marginBottom:1,textShadow:`0 0 8px ${C.green}`}}>¡BIENVENIDO!</div>
                   <h1 style={{fontFamily:"'Cinzel',serif",fontSize:20,color:C.text,letterSpacing:1,marginBottom:2}}>{player.name}</h1>
                   <div style={{fontSize:9,color:arc.aura,letterSpacing:2,marginBottom:2}}>{titleInfo.title} · {titleInfo.rank}</div>
-                  <div style={{fontSize:12,color:C.muted,marginBottom:10}}>
-                    {arc.name} · Nivel <span style={{color:C.green,fontWeight:800,fontSize:16,textShadow:`0 0 10px ${C.green}`}}>{player.level}</span>
-                    {hybrid&&<span style={{fontSize:10,color:hybrid.color,marginLeft:8,background:hybrid.color+"15",borderRadius:6,padding:"2px 7px",border:`1px solid ${hybrid.color}33`}}>{hybrid.label}</span>}
+                  <div style={{fontSize:11,color:C.muted,marginBottom:9}}>
+                    {arc.name} · Nv.<span style={{color:C.green,fontWeight:800,fontSize:15,textShadow:`0 0 10px ${C.green}`}}>{player.level}</span>
+                    {hybrid&&<span style={{fontSize:10,color:hybrid.color,marginLeft:7,background:hybrid.color+"15",borderRadius:6,padding:"2px 7px",border:`1px solid ${hybrid.color}33`}}>{hybrid.label}</span>}
                   </div>
                   <XPBar xp={player.xp} xpNext={player.xpNext}/>
-                  <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
-                    {/* BIG streak counter */}
-                    <div style={{border:`2px solid ${C.orange}44`,borderRadius:10,padding:"6px 14px",background:C.orange+"10",boxShadow:`0 0 16px ${C.orange}22`}}>
-                      <span style={{fontSize:20,fontFamily:"'Cinzel',serif",color:C.orange,fontWeight:900,textShadow:`0 0 10px ${C.orange}`}}>🔥{player.streak}</span>
-                      <span style={{fontSize:10,color:C.muted,marginLeft:4}}>días</span>
+                  <div style={{display:"flex",gap:7,marginTop:9,flexWrap:"wrap"}}>
+                    <div style={{border:`2px solid ${C.orange}44`,borderRadius:10,padding:"5px 11px",background:C.orange+"10",boxShadow:`0 0 14px ${C.orange}18`,display:"flex",alignItems:"center",gap:4}}>
+                      <span style={{fontSize:17,fontFamily:"'Cinzel',serif",color:C.orange,fontWeight:900}}>🔥{player.streak}</span>
+                      <span style={{fontSize:9,color:C.muted}}>días</span>
                     </div>
-                    <div style={{border:`1px solid ${C.border}`,borderRadius:8,padding:"6px 12px",fontSize:12,color:C.muted}}>◈ <span style={{color:C.text,fontWeight:700}}>{doneMissions}/{missions.length}</span></div>
-                    <div style={{border:`1px solid ${C.border}`,borderRadius:8,padding:"6px 12px",fontSize:12,color:C.muted}}>🏆 <span style={{color:C.orange,fontWeight:700}}>{unlockedAchievements.length}</span>/{ACHIEVEMENTS.length}</div>
-                    {lowMoodStreak&&<div onClick={()=>setShowDarkDay(true)} style={{border:`1px solid ${C.purple}33`,borderRadius:8,padding:"6px 12px",fontSize:12,color:C.purple,cursor:"pointer"}}>🌑 Día Oscuro</div>}
+                    <div style={{border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 10px",fontSize:11,color:C.muted}}>◈ <span style={{color:C.text,fontWeight:700}}>{doneMissions}/{missions.length}</span></div>
+                    <div style={{border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 10px",fontSize:11,color:C.muted}}>⚙ <span style={{color:C.orange,fontWeight:700}}>{equipped.length}</span></div>
+                    <div style={{border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 10px",fontSize:11,color:C.muted}}>🏆 <span style={{color:C.orange,fontWeight:700}}>{unlockedAchievements.length}</span></div>
+                    {lowMoodStreak&&<div onClick={()=>setShowDarkDay(true)} style={{border:`1px solid ${C.purple}33`,borderRadius:8,padding:"5px 10px",fontSize:11,color:C.purple,cursor:"pointer"}}>🌑</div>}
                   </div>
-                  {/* Next streak reward hint */}
                   {STREAK_REWARDS.filter(r=>r.day>player.streak).slice(0,1).map(r=>(
-                    <div key={r.day} style={{marginTop:8,fontSize:11,color:C.orange,background:C.orange+"10",borderRadius:8,padding:"5px 10px",border:`1px solid ${C.orange}22`}}>
-                      🎁 Día {r.day}: {r.reward} — faltan {r.day-player.streak} días
-                    </div>
+                    <div key={r.day} style={{marginTop:7,fontSize:11,color:C.orange,background:C.orange+"10",borderRadius:8,padding:"5px 10px",border:`1px solid ${C.orange}22`}}>🎁 Día {r.day}: {r.reward} — {r.day-player.streak} día{r.day-player.streak!==1?"s":""}</div>
                   ))}
-                  {doneMissions===0&&<div style={{marginTop:8,fontSize:11,color:C.green,background:C.green+"12",borderRadius:8,padding:"6px 10px",border:`1px solid ${C.green}22`}}>⚡ Completa tu primera misión y gana {MISSIONS_DATA[0].xp} XP</div>}
+                  {doneMissions===0&&<div style={{marginTop:7,fontSize:11,color:C.green,background:C.green+"12",borderRadius:8,padding:"5px 10px",border:`1px solid ${C.green}22`}}>⚡ ¡Completa una misión para ganar XP!</div>}
                 </div>
               </div>
             </div>
 
-            <div style={{maxWidth:660,margin:"0 auto",padding:"14px 15px 32px"}}>
-              {/* Star mission */}
+            <div style={{maxWidth:660,margin:"0 auto",padding:"12px 14px 32px"}}>
+              {/* Star mission — FIXED visibility */}
               {starMission&&(
-                <div style={{background:"linear-gradient(135deg,#1a1400,#0a0f00)",border:`1.5px solid ${C.orange}`,borderRadius:16,padding:"14px 18px",marginBottom:14,boxShadow:`0 0 24px ${C.orange}44`,animation:"star-pulse 2s ease-in-out infinite",position:"relative",overflow:"hidden"}}>
-                  <div style={{position:"absolute",inset:0,background:`linear-gradient(90deg,transparent,${C.orange}08,transparent)`,animation:"star-sweep 2s linear infinite",pointerEvents:"none"}}/>
-                  <div style={{display:"flex",alignItems:"center",gap:12}}>
-                    <div style={{fontSize:28,filter:`drop-shadow(0 0 8px ${C.orange})`}}>🌟</div>
+                <div style={{background:"linear-gradient(135deg,#1c1600,#0e0a00)",border:`2px solid ${C.orange}`,borderRadius:16,padding:"14px 16px",marginBottom:14,boxShadow:`0 0 32px ${C.orange}55,inset 0 0 20px ${C.orange}08`,animation:"star-pulse 1.5s ease-in-out infinite",position:"relative",overflow:"hidden",zIndex:5}}>
+                  <div style={{position:"absolute",inset:0,background:`linear-gradient(90deg,transparent,${C.orange}10,transparent)`,animation:"star-sweep 1.5s linear infinite",pointerEvents:"none"}}/>
+                  <div style={{display:"flex",alignItems:"center",gap:12,position:"relative"}}>
+                    <div style={{fontSize:32,filter:`drop-shadow(0 0 12px ${C.orange})`}}>🌟</div>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:9,color:C.orange,letterSpacing:3,marginBottom:3}}>ESTRELLA FUGAZ · {starTimer}s</div>
-                      <div style={{fontSize:13,color:"#fff9c4",fontWeight:600,lineHeight:1.4}}>{starMission.title}</div>
+                      <div style={{fontSize:9,color:C.orange,letterSpacing:3,marginBottom:3,fontWeight:700}}>✦ ESTRELLA FUGAZ · {starTimer}s</div>
+                      <div style={{fontSize:14,color:"#fff8d6",fontWeight:700,lineHeight:1.3}}>{starMission.title}</div>
                     </div>
-                    <div><div style={{fontSize:14,color:C.orange,fontWeight:800,fontFamily:"'Cinzel',serif"}}>+{starMission.xp}</div><div style={{fontSize:9,color:C.orange+"88"}}>XP</div></div>
+                    <div style={{textAlign:"right",flexShrink:0}}>
+                      <div style={{fontFamily:"'Cinzel',serif",fontSize:18,color:C.orange,fontWeight:900}}>+{starMission.xp}</div>
+                      <div style={{fontSize:9,color:C.orange+"88"}}>XP</div>
+                    </div>
                   </div>
-                  <div style={{marginTop:10,height:3,background:"#1a1400",borderRadius:2,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${(starTimer/90)*100}%`,background:`linear-gradient(90deg,${C.orange}88,${C.orange})`,borderRadius:2,transition:"width 1s linear",boxShadow:`0 0 8px ${C.orange}`}}/>
+                  <div style={{marginTop:10,height:3,background:"#1c1600",borderRadius:2,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${(starTimer/90)*100}%`,background:`linear-gradient(90deg,${C.orange}66,${C.orange})`,transition:"width 1s linear",boxShadow:`0 0 10px ${C.orange}`}}/>
                   </div>
                   <div style={{display:"flex",gap:8,marginTop:10}}>
-                    <button onClick={()=>{addXP(starMission.xp);setStarMission(null);clearInterval(starRef.current);}} style={{flex:2,background:C.orange,border:"none",borderRadius:9,padding:"9px",color:"#000",fontFamily:"'Cinzel',serif",fontWeight:800,fontSize:12,cursor:"pointer"}}>¡Completar! +{starMission.xp} XP</button>
-                    <button onClick={()=>{setStarMission(null);clearInterval(starRef.current);}} style={{flex:1,background:"transparent",border:`1px solid ${C.orange}33`,borderRadius:9,padding:"9px",color:C.orange+"66",cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>Omitir</button>
+                    <button onClick={()=>{addXP(starMission.xp);setStarMission(null);clearInterval(starRef.current);}} style={{flex:2,background:C.orange,border:"none",borderRadius:9,padding:"10px",color:"#000",fontFamily:"'Cinzel',serif",fontWeight:900,fontSize:13,cursor:"pointer",boxShadow:`0 0 16px ${C.orange}44`}}>¡Completar! +{starMission.xp} XP</button>
+                    <button onClick={()=>{setStarMission(null);clearInterval(starRef.current);}} style={{flex:1,background:"transparent",border:`1px solid ${C.orange}44`,borderRadius:9,padding:"10px",color:C.orange+"88",cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>Omitir</button>
                   </div>
                 </div>
               )}
 
-              <RobotDiary playerName={player.name} water={water} mood={currentMood} doneMissions={doneMissions} totalMissions={missions.length} attrs={attrs} arc={arc} level={player.level}/>
+              <RobotDiary playerName={player.name} water={water} mood={currentMood} doneMissions={doneMissions} totalMissions={missions.length} attrs={attrs} arc={arc} level={player.level} equipped={equipped}/>
 
-              {/* Attributes */}
               <Card>
                 <div style={{fontSize:10,color:C.muted,letterSpacing:3,marginBottom:12}}>ATRIBUTOS RPG</div>
                 <div style={{display:"flex",gap:10}}>
                   {[["FUE",C.cta,"💪","Fuerza"],["SAB",C.green,"📖","Sabiduría"],["VOL",C.purple,"⚡","Voluntad"]].map(([k,c,ic,lbl])=>(
                     <div key={k} style={{flex:1,background:C.bg,border:`1px solid ${c}22`,borderRadius:12,padding:"12px 8px",textAlign:"center"}}>
-                      <div style={{fontSize:16,marginBottom:4}}>{ic}</div>
-                      <div style={{fontFamily:"'Cinzel',serif",fontSize:20,color:c,textShadow:`0 0 8px ${c}`}}>{attrs[k]}</div>
-                      <div style={{fontSize:9,color:C.muted,marginTop:3,letterSpacing:1}}>{lbl}</div>
+                      <div style={{fontSize:16,marginBottom:3}}>{ic}</div>
+                      <div style={{fontFamily:"'Cinzel',serif",fontSize:18,color:c,textShadow:`0 0 8px ${c}`}}>{attrs[k]}</div>
+                      {artifactBonus[k]>0&&<div style={{fontSize:10,color:c,fontWeight:700}}>+{artifactBonus[k]} ⚙</div>}
+                      <div style={{fontSize:9,color:C.muted,marginTop:2,letterSpacing:1}}>{lbl}</div>
                     </div>
                   ))}
                 </div>
-                {hybrid&&<div style={{marginTop:12,padding:"8px 12px",background:hybrid.color+"10",border:`1px solid ${hybrid.color}30`,borderRadius:10,fontSize:12,color:hybrid.color,textAlign:"center"}}>✦ {hybrid.label} — accesorio especial activo</div>}
+                {hybrid&&<div style={{marginTop:10,padding:"7px 12px",background:hybrid.color+"10",border:`1px solid ${hybrid.color}30`,borderRadius:10,fontSize:12,color:hybrid.color,textAlign:"center"}}>✦ {hybrid.label}</div>}
               </Card>
 
-              {/* Stats */}
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:12}}>
                 {[
                   {icon:"⚖️",val:bmi||"—",label:"IMC",badge:bmiLabel||"—",c:bmiColor},
@@ -1136,18 +1219,17 @@ export default function App(){
                   {icon:"⚡",val:`${profile.stress}/10`,label:"Estrés",badge:profile.stress<=4?"Bajo":profile.stress<=6?"Medio":"Alto",c:profile.stress<=4?C.green:profile.stress<=6?C.orange:"#f87171"},
                   {icon:"💧",val:`${water}/8`,label:"Agua",badge:water>=8?"¡Lleno!":water>=4?"Mitad":"Seco",c:water>=8?C.green:water>=4?C.orange:"#60a5fa"},
                 ].map((s,i)=>(
-                  <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 8px",textAlign:"center"}}>
-                    <div style={{fontSize:17,marginBottom:4}}>{s.icon}</div>
-                    <div style={{fontFamily:"'Cinzel',serif",fontSize:14,color:C.text}}>{s.val}</div>
-                    <div style={{fontSize:9,color:C.muted,margin:"3px 0 5px"}}>{s.label}</div>
-                    <div style={{fontSize:9,borderRadius:5,padding:"2px 4px",background:s.c+"20",color:s.c,fontWeight:700}}>{s.badge}</div>
+                  <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"10px 6px",textAlign:"center"}}>
+                    <div style={{fontSize:16,marginBottom:3}}>{s.icon}</div>
+                    <div style={{fontFamily:"'Cinzel',serif",fontSize:13,color:C.text}}>{s.val}</div>
+                    <div style={{fontSize:8,color:C.muted,margin:"2px 0 4px"}}>{s.label}</div>
+                    <div style={{fontSize:8,borderRadius:5,padding:"2px 3px",background:s.c+"20",color:s.c,fontWeight:700}}>{s.badge}</div>
                   </div>
                 ))}
               </div>
 
-              <WaterTank water={water} setWater={setWater} addXP={addXP} waterXPGiven={waterXPGiven} setWaterXPGiven={setWaterXPGiven} arc={arc}/>
+              <WaterTank water={water} setWater={setWater} addXP={addXP} waterXPGiven={waterXPGiven} setWaterXPGiven={setWaterXPGiven} onWaterComplete={onWaterComplete}/>
 
-              {/* Mood */}
               <Card>
                 <div style={{fontSize:10,color:C.muted,letterSpacing:3,marginBottom:12}}>ESTADO DE ÁNIMO</div>
                 <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:moodLog.length?10:0}}>
@@ -1161,7 +1243,6 @@ export default function App(){
                 {moodLog.length>0&&<div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{moodLog.slice(-5).map((m,i)=><span key={i} style={{background:C.bg,borderRadius:6,padding:"3px 8px",fontSize:10,color:C.muted,border:`1px solid ${C.border}`}}>{MOODS[m.v-1]?.e} {m.t}</span>)}</div>}
               </Card>
 
-              {/* Missions preview */}
               <Card>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}>
                   <span style={{fontSize:10,color:C.muted,letterSpacing:3}}>MISIONES DE HOY</span>
@@ -1170,41 +1251,43 @@ export default function App(){
                 <div style={{height:4,background:C.bg,borderRadius:2,overflow:"hidden",marginBottom:12}}>
                   <div style={{height:"100%",width:`${(doneMissions/missions.length)*100}%`,background:`linear-gradient(90deg,${C.green}55,${C.green})`,borderRadius:2,transition:"width 0.6s",boxShadow:`0 0 10px ${C.green}`}}/>
                 </div>
-                {missions.slice(0,4).map((m,i)=>(
-                  <div key={m.id} onClick={()=>completeMission(i)} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:i<3?`1px solid ${C.bg}`:"none",cursor:"pointer",opacity:m.done?0.4:1,transition:"all 0.4s",transform:completedAnim===i?"scale(1.02)":"scale(1)"}}>
-                    <div style={{width:22,height:22,border:`1.5px solid ${m.done?C.green:C.border}`,borderRadius:6,background:m.done?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#000",fontWeight:800,flexShrink:0,transition:"all 0.4s",boxShadow:m.done?`0 0 10px ${C.green}`:"none"}}>{m.done?"✓":""}</div>
-                    <span style={{fontSize:13,flex:1,color:"#94a3b8"}}>{m.icon} {m.title}</span>
-                    {m.difficulty==="epic"&&<span style={{fontSize:9,color:C.purple,background:C.purple+"15",border:`1px solid ${C.purple}33`,borderRadius:5,padding:"2px 7px"}}>ÉPICA</span>}
-                    <span style={{fontSize:10,color:C.green,border:`1px solid ${C.green}30`,borderRadius:5,padding:"2px 8px",fontWeight:700}}>+{m.xp}</span>
-                  </div>
-                ))}
+                {missions.slice(0,4).map((m,i)=>{
+                  const isWater=m.id===3;
+                  const wLocked=isWater&&water<8&&!m.done;
+                  return(
+                    <div key={m.id} onClick={()=>completeMission(i)} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:i<3?`1px solid ${C.bg}`:"none",cursor:wLocked?"not-allowed":"pointer",opacity:m.done?0.4:1,transition:"all 0.4s",transform:completedAnim===i?"scale(1.02)":"scale(1)"}}>
+                      <div style={{width:22,height:22,border:`1.5px solid ${m.done?C.green:C.border}`,borderRadius:6,background:m.done?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#000",fontWeight:800,flexShrink:0,transition:"all 0.4s",boxShadow:m.done?`0 0 10px ${C.green}`:"none"}}>{m.done?"✓":""}</div>
+                      <span style={{fontSize:13,flex:1,color:"#94a3b8"}}>{m.icon} {m.title}{wLocked?<span style={{fontSize:10,color:C.muted,marginLeft:6}}>(llena el tanque)</span>:""}</span>
+                      {m.difficulty==="epic"&&<span style={{fontSize:9,color:C.purple,background:C.purple+"15",border:`1px solid ${C.purple}33`,borderRadius:5,padding:"2px 6px"}}>ÉPICA</span>}
+                      <span style={{fontSize:10,color:C.green,border:`1px solid ${C.green}30`,borderRadius:5,padding:"2px 8px",fontWeight:700}}>+{m.xp}</span>
+                    </div>
+                  );
+                })}
               </Card>
             </div>
           </div>
         )}
 
-        {/* MAPA */}
         {tab==="mapa"&&(
-          <div style={{maxWidth:700,margin:"0 auto",padding:"24px 16px 40px"}}>
-            <h2 style={{fontFamily:"'Cinzel',serif",fontSize:22,color:C.text,letterSpacing:2,marginBottom:6}}>🗺 Mapa del Viaje</h2>
-            <p style={{fontSize:13,color:C.muted,marginBottom:20}}>Tu robot avanza por el mundo cada vez que subes de nivel. Toca cada etapa para ver detalles.</p>
-            <WorldMap level={player.level} totalXP={totalXP} playerName={player.name} archetype={player.archetype} epicDone={epicDone} attrs={attrs}/>
-            {/* Stage list */}
-            <div style={{marginTop:8}}>
-              <div style={{fontSize:10,color:C.muted,letterSpacing:3,marginBottom:14}}>TODAS LAS ETAPAS</div>
-              {MAP_STAGES.map((stage,i)=>{
+          <div style={{maxWidth:700,margin:"0 auto",padding:"20px 14px 40px"}}>
+            <h2 style={{fontFamily:"'Cinzel',serif",fontSize:22,color:C.text,letterSpacing:2,marginBottom:4}}>🗺 Mapa del Viaje</h2>
+            <p style={{fontSize:13,color:C.muted,marginBottom:16}}>Tu nave avanza al subir de nivel. Toca cada etapa para ver detalles.</p>
+            <WorldMap level={player.level} playerName={player.name} archetype={player.archetype} epicDone={epicDone} attrs={attrs} equipped={equipped}/>
+            <div style={{marginTop:6}}>
+              <div style={{fontSize:10,color:C.muted,letterSpacing:3,marginBottom:12}}>TODAS LAS ETAPAS</div>
+              {MAP_STAGES.map((stage)=>{
                 const unlocked=player.level>=stage.minLevel;
-                const isCurrent=getCurrentStage(player.level).id===stage.id;
+                const isCurrent=stage.id===MAP_STAGES[MAP_STAGES.findLastIndex(s=>player.level>=s.minLevel)]?.id;
                 return(
-                  <div key={stage.id} style={{background:C.card,border:`1px solid ${isCurrent?stage.color+"55":unlocked?stage.color+"22":C.border}`,borderRadius:14,padding:"14px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:14,opacity:unlocked?1:0.5,boxShadow:isCurrent?`0 0 20px ${stage.color}18`:"none"}}>
-                    <div style={{width:40,height:40,borderRadius:12,background:unlocked?stage.color+"20":C.bg,border:`1px solid ${unlocked?stage.color+"44":C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{stage.icon}</div>
+                  <div key={stage.id} style={{background:C.card,border:`1px solid ${isCurrent?stage.color+"55":unlocked?stage.color+"22":C.border}`,borderRadius:14,padding:"12px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:14,opacity:unlocked?1:0.5,boxShadow:isCurrent?`0 0 20px ${stage.color}18`:"none"}}>
+                    <div style={{width:38,height:38,borderRadius:12,background:unlocked?stage.color+"20":C.bg,border:`1px solid ${unlocked?stage.color+"44":C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{stage.icon}</div>
                     <div style={{flex:1}}>
                       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
                         <span style={{fontSize:14,color:unlocked?C.text:C.muted,fontWeight:600}}>{stage.label}</span>
-                        {isCurrent&&<span style={{fontSize:9,color:stage.color,background:stage.color+"18",borderRadius:5,padding:"2px 8px",border:`1px solid ${stage.color}33`}}>ACTUAL</span>}
+                        {isCurrent&&<span style={{fontSize:9,color:stage.color,background:stage.color+"18",borderRadius:5,padding:"2px 8px"}}>ACTUAL</span>}
                         {!unlocked&&<span style={{fontSize:9,color:C.muted}}>🔒 Nv.{stage.minLevel}</span>}
                       </div>
-                      <div style={{fontSize:12,color:C.muted}}>{stage.sublabel}</div>
+                      <div style={{fontSize:11,color:C.muted}}>{stage.sublabel}</div>
                     </div>
                     {unlocked&&<div style={{fontSize:18,color:stage.color}}>✓</div>}
                   </div>
@@ -1214,7 +1297,6 @@ export default function App(){
           </div>
         )}
 
-        {/* MISIONES */}
         {tab==="misiones"&&(
           <div style={S.page}>
             <h2 style={S.ptitle}>◈ Misiones Diarias</h2>
@@ -1222,51 +1304,53 @@ export default function App(){
             <Card style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
                 <span style={{fontSize:13,color:"#8892a4"}}>Progreso de hoy</span>
-                <span style={{fontSize:12,color:C.green,fontWeight:700}}>{doneMissions} / {missions.length}</span>
+                <span style={{fontSize:12,color:C.green,fontWeight:700}}>{doneMissions}/{missions.length}</span>
               </div>
               <XPBar xp={doneMissions} xpNext={missions.length} label={false}/>
               <div style={{display:"flex",gap:12,marginTop:12}}>
                 {[["FUE",C.cta,"💪"],["SAB",C.green,"📖"],["VOL",C.purple,"⚡"]].map(([k,c,ic])=>(
-                  <div key={k} style={{fontSize:11,color:c}}>{ic} {k}: {attrs[k]}</div>
+                  <div key={k} style={{fontSize:11,color:c}}>{ic} {k}: {attrs[k]}{artifactBonus[k]>0?<span style={{opacity:0.6}}>+{artifactBonus[k]}</span>:""}</div>
                 ))}
               </div>
             </Card>
-            {missions.map((m,i)=>(
-              <div key={m.id} style={{background:m.difficulty==="epic"?`linear-gradient(135deg,${C.card},#0a0a18)`:C.card,border:`1px solid ${m.done?C.border:m.difficulty==="epic"?C.purple+"44":C.green+"28"}`,borderRadius:16,padding:"16px 18px",marginBottom:10,boxShadow:m.difficulty==="epic"&&!m.done?`0 0 20px ${C.purple}15`:"none",transition:"all 0.4s",transform:completedAnim===i?"scale(1.015)":"scale(1)"}}>
-                <div style={{display:"flex",alignItems:"center",gap:14,cursor:"pointer"}} onClick={()=>completeMission(i)}>
-                  <div style={{width:34,height:34,border:`1.5px solid ${m.done?C.green:m.difficulty==="epic"?C.purple:C.border}`,borderRadius:10,background:m.done?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14,color:m.done?"#000":C.muted,fontWeight:800,transition:"all 0.4s",boxShadow:m.done?`0 0 14px ${C.green}`:m.difficulty==="epic"?`0 0 10px ${C.purple}33`:"none",opacity:m.done?0.7:1}}>{m.done?"✓":m.icon}</div>
-                  <div style={{flex:1,opacity:m.done?0.45:1}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
-                      <div style={{fontSize:14,color:m.difficulty==="epic"?C.purple:C.text,fontWeight:600}}>{m.title}</div>
-                      {m.difficulty==="epic"&&!m.done&&<span style={{fontSize:9,color:C.purple,background:C.purple+"15",border:`1px solid ${C.purple}33`,borderRadius:5,padding:"2px 7px"}}>ÉPICA 🔓</span>}
-                    </div>
-                    <div style={{fontSize:12,color:C.muted,marginBottom:4}}>{m.sub}</div>
-                    <div style={{fontSize:11,color:m.difficulty==="epic"?C.purple:arc.aura,fontStyle:"italic",opacity:0.8}}>"{m.lore}"</div>
-                    {!m.done&&MISSION_ATTRS[m.id]&&(
-                      <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap"}}>
-                        {Object.entries(MISSION_ATTRS[m.id]).filter(([,v])=>v>0).map(([k,v])=>(
-                          <span key={k} style={{fontSize:9,color:k==="FUE"?C.cta:k==="SAB"?C.green:C.purple,background:(k==="FUE"?C.cta:k==="SAB"?C.green:C.purple)+"15",borderRadius:5,padding:"2px 7px"}}>+{v} {k}</span>
-                        ))}
+            {missions.map((m,i)=>{
+              const isWater=m.id===3;
+              const wLocked=isWater&&water<8&&!m.done;
+              return(
+                <div key={m.id} style={{background:m.difficulty==="epic"?`linear-gradient(135deg,${C.card},#0a0a18)`:C.card,border:`1px solid ${m.done?C.border:m.difficulty==="epic"?C.purple+"44":C.green+"28"}`,borderRadius:16,padding:"16px 18px",marginBottom:10,transition:"all 0.4s",transform:completedAnim===i?"scale(1.015)":"scale(1)",boxShadow:m.difficulty==="epic"&&!m.done?`0 0 20px ${C.purple}15`:"none"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:14,cursor:wLocked?"not-allowed":"pointer"}} onClick={()=>completeMission(i)}>
+                    <div style={{width:34,height:34,border:`1.5px solid ${m.done?C.green:m.difficulty==="epic"?C.purple:C.border}`,borderRadius:10,background:m.done?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14,color:m.done?"#000":C.muted,fontWeight:800,transition:"all 0.4s",boxShadow:m.done?`0 0 14px ${C.green}`:m.difficulty==="epic"?`0 0 10px ${C.purple}33`:"none",opacity:m.done?0.7:1}}>{m.done?"✓":m.icon}</div>
+                    <div style={{flex:1,opacity:m.done?0.45:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2,flexWrap:"wrap"}}>
+                        <div style={{fontSize:14,color:m.difficulty==="epic"?C.purple:C.text,fontWeight:600}}>{m.title}</div>
+                        {m.difficulty==="epic"&&!m.done&&<span style={{fontSize:9,color:C.purple,background:C.purple+"15",border:`1px solid ${C.purple}33`,borderRadius:5,padding:"2px 7px"}}>ÉPICA 🔓</span>}
+                        {wLocked&&<span style={{fontSize:9,color:C.muted,background:C.muted+"10",borderRadius:5,padding:"2px 7px"}}>Llena el tanque</span>}
                       </div>
-                    )}
+                      <div style={{fontSize:12,color:C.muted,marginBottom:4}}>{m.sub}</div>
+                      <div style={{fontSize:11,color:m.difficulty==="epic"?C.purple:arc.aura,fontStyle:"italic",opacity:0.8}}>"{m.lore}"</div>
+                      {!m.done&&MISSION_ATTRS[m.id]&&(
+                        <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap"}}>
+                          {Object.entries(MISSION_ATTRS[m.id]).filter(([,v])=>v>0).map(([k,v])=>(
+                            <span key={k} style={{fontSize:9,color:k==="FUE"?C.cta:k==="SAB"?C.green:C.purple,background:(k==="FUE"?C.cta:k==="SAB"?C.green:C.purple)+"15",borderRadius:5,padding:"2px 7px"}}>+{v} {k}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{textAlign:"right",flexShrink:0,opacity:m.done?0.4:1}}>
+                      <div style={{fontSize:13,color:m.difficulty==="epic"?C.purple:C.green,fontWeight:700}}>+{m.xp} XP</div>
+                      <div style={{fontSize:9,color:C.muted,textTransform:"capitalize",marginTop:2}}>{m.area}</div>
+                    </div>
                   </div>
-                  <div style={{textAlign:"right",flexShrink:0,opacity:m.done?0.4:1}}>
-                    <div style={{fontSize:13,color:m.difficulty==="epic"?C.purple:C.green,fontWeight:700}}>+{m.xp} XP</div>
-                    <div style={{fontSize:9,color:C.muted,textTransform:"capitalize",marginTop:2}}>{m.area}</div>
-                  </div>
+                  {!m.done&&!wLocked&&<WhyBox text={m.why} color={m.difficulty==="epic"?C.purple:arc.aura}/>}
                 </div>
-                {!m.done&&<WhyBox text={m.why} color={m.difficulty==="epic"?C.purple:arc.aura}/>}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
-        {/* LOGROS */}
-        {tab==="logros"&&(
-          <AchievementsScreen stats={{level:player.level,streak:player.streak,totalXP,epicDone,attrs,totalMissions:totalMissionsCompleted,waterCompleted,moodDays,dayPerfect}} unlockedAchievements={unlockedAchievements}/>
-        )}
+        {tab==="artefactos"&&<ArsenalScreen level={player.level} equipped={equipped} setEquipped={setEquipped} addXP={addXP} attrs={attrs}/>}
+        {tab==="logros"&&<AchievementsScreen stats={{level:player.level,streak:player.streak,totalXP,epicDone,attrs,totalMissions:totalMissionsCompleted,waterCompleted,moodDays,dayPerfect,equippedCount:equipped.length}} unlockedAchievements={unlockedAchievements}/>}
 
-        {/* SALUD */}
         {tab==="salud"&&(
           <div style={S.page}>
             <h2 style={S.ptitle}>✦ Salud</h2>
@@ -1288,11 +1372,11 @@ export default function App(){
             </Card>}
             <div style={S.section}>Plan Físico</div>
             {[
-              profile.goals.includes("Perder peso")&&{icon:"🚶",t:"Cardio moderado",d:"30 min de caminata rápida. Zona 60-70% FC máx — donde el cuerpo usa más grasa.",f:"5x/sem",c:C.green},
+              profile.goals.includes("Perder peso")&&{icon:"🚶",t:"Cardio moderado",d:"30 min de caminata rápida. Zona 60-70% FC máx.",f:"5x/sem",c:C.green},
               profile.goals.includes("Ganar músculo")&&{icon:"💪",t:"Entrenamiento de fuerza",d:"Sentadillas, press, jalones. 3-4 series de 8-12 reps.",f:"3x/sem",c:C.cta},
-              profile.goals.includes("Más energía")&&{icon:"⚡",t:"HIIT suave",d:"20 min: 30s esfuerzo alto, 90s suave. Aumenta mitocondrias.",f:"3x/sem",c:C.orange},
+              profile.goals.includes("Más energía")&&{icon:"⚡",t:"HIIT suave",d:"20 min: 30s esfuerzo alto, 90s suave.",f:"3x/sem",c:C.orange},
               {icon:"🧘",t:"Movilidad y flexibilidad",d:"15 min de estiramientos. Reduce lesiones y activa el sistema nervioso parasimpático.",f:"Diario",c:C.purple},
-              {icon:"💧",t:`Meta: ${waterGoal}L de agua`,d:"Calculado según tu peso (33ml/kg). Distribuye a lo largo del día.",f:"Diario",c:C.green},
+              {icon:"💧",t:`Meta: ${waterGoal}L de agua`,d:"Calculado según tu peso (33ml/kg).",f:"Diario",c:C.green},
             ].filter(Boolean).map((p,i)=>(
               <Card key={i} style={{borderLeft:`3px solid ${p.c}`,borderColor:p.c+"30"}}>
                 <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
@@ -1310,10 +1394,10 @@ export default function App(){
             <div style={S.section}>Chequeos Recomendados</div>
             {[
               parseFloat(profile.age)>=35&&{icon:"🩸",t:"Perfil lipídico",d:"Colesterol total, HDL, LDL y triglicéridos.",f:"Anual",c:"#f87171"},
-              parseFloat(profile.age)>=30&&{icon:"🔬",t:"Glucosa en ayuno",d:"Detecta prediabetes antes de que se desarrolle.",f:"Anual",c:C.orange},
+              parseFloat(profile.age)>=30&&{icon:"🔬",t:"Glucosa en ayuno",d:"Detecta prediabetes en etapa reversible.",f:"Anual",c:C.orange},
               profile.conditions.includes("Diabetes")&&{icon:"📊",t:"HbA1c",d:"Promedio de glucosa de los últimos 3 meses.",f:"Trimestral",c:C.orange},
               profile.conditions.includes("Hipertensión")&&{icon:"❤️",t:"Presión en casa",d:"Mañana y noche durante 7 días.",f:"Mensual",c:"#f43f5e"},
-              {icon:"☀️",t:"Vitamina D y B12",d:"Deficiencias muy comunes en adultos jóvenes urbanos.",f:"Anual",c:C.orange},
+              {icon:"☀️",t:"Vitamina D y B12",d:"Deficiencias comunes en adultos jóvenes urbanos.",f:"Anual",c:C.orange},
               (profile.conditions.includes("Ansiedad")||profile.conditions.includes("Depresión"))&&{icon:"💬",t:"Psicólogo o psiquiatra",d:"La TCC tiene evidencia sólida.",f:"Prioritario",c:C.purple},
               {icon:"🦷",t:"Examen dental",d:"Relacionado con inflamación sistémica.",f:"6 meses",c:C.green},
             ].filter(Boolean).map((r,i)=>(
@@ -1333,18 +1417,17 @@ export default function App(){
           </div>
         )}
 
-        {/* MENTE */}
         {tab==="mente"&&(
           <div style={S.page}>
             <h2 style={S.ptitle}>◎ Mente</h2>
             <p style={S.psub}>La batalla más importante ocurre aquí dentro</p>
             <Card glow={C.green}>
               <div style={{fontSize:10,color:C.muted,letterSpacing:3,marginBottom:8}}>RESPIRACIÓN 4-7-8</div>
-              <p style={{fontSize:13,color:C.muted,lineHeight:1.85,marginBottom:4}}>Activa el nervio vago y cambia el sistema nervioso a parasimpático (calma) en minutos.</p>
+              <p style={{fontSize:13,color:C.muted,lineHeight:1.85,marginBottom:4}}>Activa el nervio vago y cambia el sistema nervioso a parasimpático en minutos.</p>
               <p style={{fontSize:12,color:C.muted,marginBottom:16,fontStyle:"italic"}}>Inhala 4s · Sostén 7s · Exhala 8s</p>
               {breathActive?(
                 <div style={{textAlign:"center",padding:"12px 0"}}>
-                  <div style={{width:90,height:90,borderRadius:"50%",border:`2px solid ${C.green}`,background:C.green+"10",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:`0 0 30px ${C.green}88`,animation:breathPhase==="inhala"?"expand 4s ease forwards":breathPhase==="exhala"?"contract 8s ease forwards":"none"}}>
+                  <div style={{width:88,height:88,borderRadius:"50%",border:`2px solid ${C.green}`,background:C.green+"10",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:`0 0 30px ${C.green}88`,animation:breathPhase==="inhala"?"expand 4s ease forwards":breathPhase==="exhala"?"contract 8s ease forwards":"none"}}>
                     <span style={{fontFamily:"'Cinzel',serif",fontSize:11,color:C.green,textTransform:"uppercase",letterSpacing:2}}>{breathPhase}</span>
                   </div>
                   <button onClick={stopBreath} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 20px",color:C.muted,cursor:"pointer",fontSize:12,fontFamily:"inherit"}}>Detener</button>
@@ -1355,9 +1438,9 @@ export default function App(){
             {[
               {icon:"🧠",t:"Meditación matutina",d:"10 min al despertar. Meta-análisis de 209 estudios (JAMA 2014): reduce ansiedad y depresión.",f:"Mañana",c:C.purple},
               {icon:"✍️",t:"Journaling de gratitud",d:"3 cosas buenas de hoy. Emmons & McCullough (2003): 25% más bienestar subjetivo.",f:"Noche",c:C.cta},
-              {icon:"🌑",t:"Desconexión digital",d:"1h sin redes. U. of Pennsylvania (2018): reduce soledad y depresión significativamente.",f:"Diario",c:C.green},
-              {icon:"🌅",t:"Luz solar matutina",d:"10-15 min antes de las 10AM. Regula cortisol y prepara melatonina nocturna.",f:"Mañana",c:C.orange},
-              parseInt(profile.stress)>=6&&{icon:"🌬️",t:"Pausas ultradianas",d:"Cada 90 min: 3 respiraciones profundas. El cerebro necesita reset activo.",f:"C/90 min",c:C.green},
+              {icon:"🌑",t:"Desconexión digital",d:"1h sin redes. U. of Pennsylvania (2018): reduce soledad y depresión.",f:"Diario",c:C.green},
+              {icon:"🌅",t:"Luz solar matutina",d:"10-15 min antes de las 10AM. Regula cortisol y prepara melatonina.",f:"Mañana",c:C.orange},
+              parseInt(profile.stress)>=6&&{icon:"🌬️",t:"Pausas ultradianas",d:"Cada 90 min: 3 respiraciones. El cerebro necesita reset activo.",f:"C/90 min",c:C.green},
             ].filter(Boolean).map((p,i)=>(
               <Card key={i} style={{borderLeft:`3px solid ${p.c}`,borderColor:p.c+"25"}}>
                 <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
@@ -1369,25 +1452,6 @@ export default function App(){
                     </div>
                     <div style={{fontSize:12,color:C.muted,lineHeight:1.8}}>{p.d}</div>
                   </div>
-                </div>
-              </Card>
-            ))}
-            <div style={S.section}>Lecturas Esenciales</div>
-            {[
-              {t:"Atomic Habits",a:"James Clear",tag:"Hábitos",c:C.green,d:"El sistema más práctico para construir hábitos. El entorno importa más que la fuerza de voluntad."},
-              {t:"Por qué dormimos",a:"Matthew Walker",tag:"Sueño",c:C.purple,d:"La ciencia más actualizada del sueño. Cambia para siempre cómo ves esas 7-9 horas."},
-              {t:"El poder del ahora",a:"Eckhart Tolle",tag:"Mindfulness",c:C.green,d:"La ansiedad vive en el futuro. La paz solo existe en el presente."},
-              {t:"Los 7 hábitos",a:"Stephen Covey",tag:"Efectividad",c:C.orange,d:"Desarrollo personal basado en carácter y principios universales."},
-              {t:"Feeling Good",a:"David Burns",tag:"TCC",c:C.cta,d:"Manual de TCC clínicamente validado para ansiedad y depresión."},
-            ].map((b,i)=>(
-              <Card key={i}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:14,color:C.text,fontWeight:600,marginBottom:2}}>📖 {b.t}</div>
-                    <div style={{fontSize:11,color:C.muted,marginBottom:6}}>— {b.a}</div>
-                    <div style={{fontSize:12,color:C.muted,lineHeight:1.7}}>{b.d}</div>
-                  </div>
-                  <span style={{fontSize:10,background:b.c+"20",color:b.c,borderRadius:20,padding:"3px 10px",fontWeight:700,flexShrink:0,whiteSpace:"nowrap"}}>{b.tag}</span>
                 </div>
               </Card>
             ))}
@@ -1420,12 +1484,12 @@ const CSS=`
   ::-webkit-scrollbar{width:3px;}
   ::-webkit-scrollbar-thumb{background:#334155;border-radius:3px;}
   input::placeholder{color:#334155;}
-  button:hover{filter:brightness(1.12);}
-  @keyframes aura-breathe{0%,100%{opacity:0.85;transform:scale(1);}50%{opacity:1;transform:scale(1.08);}}
+  button:hover{filter:brightness(1.1);}
+  @keyframes aura-breathe{0%,100%{opacity:0.85;transform:scale(1);}50%{opacity:1;transform:scale(1.06);}}
   @keyframes dark-breathe{0%,100%{opacity:0.4;}50%{opacity:0.6;}}
-  @keyframes ground-pulse{0%,100%{opacity:0.7;}50%{opacity:1;transform:scaleX(1.1);}}
+  @keyframes ground-pulse{0%,100%{opacity:0.7;}50%{opacity:1;transform:scaleX(1.08);}}
   @keyframes ring-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-  @keyframes float-p{0%{transform:translateY(0);opacity:0.3;}100%{transform:translateY(-12px);opacity:0.55;}}
+  @keyframes float-p{0%{transform:translateY(0);opacity:0.22;}100%{transform:translateY(-10px);opacity:0.42;}}
   @keyframes rain-fall{0%{transform:translateY(-20px);opacity:0;}10%{opacity:0.4;}90%{opacity:0.4;}100%{transform:translateY(110vh);opacity:0;}}
   @keyframes rain-streak{0%{transform:translateY(-100%);opacity:0;}5%{opacity:1;}95%{opacity:0.6;}100%{transform:translateY(200%);opacity:0;}}
   @keyframes expand{0%{transform:scale(1);}100%{transform:scale(1.3);}}
@@ -1436,21 +1500,25 @@ const CSS=`
   @keyframes slide-up-toast{0%{opacity:0;transform:translateX(-50%) translateY(20px);}15%{opacity:1;transform:translateX(-50%) translateY(0);}80%{opacity:1;}100%{opacity:0;transform:translateX(-50%) translateY(-10px);}}
   @keyframes xp-burst{0%{opacity:0;transform:translate(-50%,-50%) scale(0.5);}30%{opacity:1;transform:translate(-50%,-80%) scale(1.2);}70%{opacity:1;transform:translate(-50%,-120%) scale(1);}100%{opacity:0;transform:translate(-50%,-160%) scale(0.8);}}
   @keyframes float-xp{0%{opacity:0;transform:translateX(-50%) scale(0.8);}20%{opacity:1;transform:translateX(-50%) scale(1.1);}70%{opacity:1;transform:translateX(-50%) translateY(-30px);}100%{opacity:0;transform:translateX(-50%) translateY(-60px);}}
+  @keyframes confetti-fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
   @keyframes pulse-soft{0%,100%{opacity:0.6;}50%{opacity:1;}}
   @keyframes future-pulse{0%,100%{opacity:0.11;}50%{opacity:0.19;}}
-  @keyframes star-pulse{0%,100%{box-shadow:0 0 24px #F59E0B44;}50%{box-shadow:0 0 36px #F59E0B66;}}
+  @keyframes star-pulse{0%,100%{box-shadow:0 0 32px #F59E0B55;}50%{box-shadow:0 0 48px #F59E0B88;}}
   @keyframes star-sweep{0%{transform:translateX(-100%);}100%{transform:translateX(400%);}}
   @keyframes star-drift{0%{transform:translateY(0);}100%{transform:translateY(8px);}}
-  @keyframes nebula-drift{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(20px,15px) scale(1.1);}}
+  @keyframes nebula-drift{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(18px,12px) scale(1.1);}}
   @keyframes wings-flap{0%,100%{transform:scaleY(1);}50%{transform:scaleY(0.92);}}
   @keyframes hybrid-pulse{0%,100%{opacity:0.8;}50%{opacity:1;}}
   @keyframes wave{0%{transform:scaleX(1);}50%{transform:scaleX(1.1);}100%{transform:scaleX(1);}}
   @keyframes cta-pulse{0%,100%{box-shadow:0 0 40px #F9731655;}50%{box-shadow:0 0 60px #F9731688;}}
-  @keyframes robot-idle{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
-  @keyframes node-pulse{0%,100%{opacity:1;r:18;}50%{opacity:0.8;r:20;}}
+  @keyframes ship-idle{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+  @keyframes ship-warp{0%{transform:scale(1) translateY(0);}40%{transform:scale(0.7) translateY(20px);}60%{transform:scale(1.3) translateY(-30px);}100%{transform:scale(1) translateY(0);}}
+  @keyframes flame-flicker{0%{opacity:0.7;transform:scaleY(1);}100%{opacity:1;transform:scaleY(1.3);}}
+  @keyframes node-pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+  @keyframes equip-flash{0%{filter:brightness(1);}30%{filter:brightness(2.5);}60%{filter:brightness(1.5);}100%{filter:brightness(1);}}
   @media(max-width:600px){
     div[style*="repeat(4,1fr)"]{grid-template-columns:1fr 1fr!important;}
-    div[style*="auto-fit, minmax(240"]{grid-template-columns:1fr!important;}
-    div[style*="auto-fit, minmax(180"]{grid-template-columns:1fr!important;}
+    div[style*="auto-fit, minmax(230"]{grid-template-columns:1fr!important;}
+    div[style*="auto-fit, minmax(175"]{grid-template-columns:1fr!important;}
   }
 `;
