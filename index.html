@@ -2,14 +2,75 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#07080f" />
-    <meta name="description" content="The Journey — Tu vida como un RPG. Sube de nivel siendo mejor cada día." />
-    <title>The Journey</title>
+
+    <!-- PWA & Mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="The Journey" />
+    <meta name="theme-color" content="#0F172A" />
+
+    <!-- SEO & Social -->
+    <title>The Journey — Sube de Nivel en la Vida Real</title>
+    <meta name="description" content="Tu vida como un RPG. Completa hábitos reales, gana XP y evoluciona tu robot. Gratis." />
+    <meta name="keywords" content="hábitos, productividad, RPG, desarrollo personal, gamificación" />
+
+    <!-- Open Graph (WhatsApp, Twitter, etc.) -->
+    <meta property="og:title" content="The Journey — Sube de Nivel en la Vida Real" />
+    <meta property="og:description" content="Tu vida como un RPG. Completa hábitos, gana XP y evoluciona tu robot personal." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="The Journey" />
+    <meta name="twitter:description" content="Tu vida como un RPG. Gratis." />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+
+    <!-- Splash screens iOS (optional enhancement) -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then((reg) => {
+              console.log('[SW] Registrado:', reg.scope);
+
+              // Programar recordatorio diario a las 7pm
+              if (reg.active) {
+                const playerData = (() => {
+                  try {
+                    const d = localStorage.getItem('thejourney_v8');
+                    return d ? JSON.parse(d) : null;
+                  } catch { return null; }
+                })();
+
+                if (playerData?.player?.name) {
+                  reg.active.postMessage({
+                    type: 'SCHEDULE_REMINDER',
+                    name: playerData.player.name,
+                    hour: 19, // 7pm
+                  });
+                }
+              }
+            })
+            .catch((err) => {
+              console.log('[SW] Error:', err);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

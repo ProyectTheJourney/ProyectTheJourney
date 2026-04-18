@@ -576,6 +576,11 @@ function HeroAvatar({archetype,level=1,size=200,animate=true,mood=3,darkDay=fals
   const hybrid=getHybrid(archetype,attrs);
   const hasFUE=equipped.some(id=>ARTIFACTS.find(a=>a.id===id&&a.attr==="FUE"));
   const hasSAB=equipped.some(id=>ARTIFACTS.find(a=>a.id===id&&a.attr==="SAB"));
+  const hasVOL=equipped.some(id=>ARTIFACTS.find(a=>a.id===id&&a.attr==="VOL"));
+  const hasHelmet=equipped.includes("warrior_helmet")||equipped.includes("titan_gloves")||equipped.includes("steel_chestplate");
+  const hasGlasses=equipped.includes("visionary_glasses")||equipped.includes("ancient_book")||equipped.includes("knowledge_amulet");
+  const hasCape=equipped.includes("resilience_cape")||equipped.includes("determination_ring")||equipped.includes("focus_bracelet");
+  const artifactCount=equipped.length;
   const id=`${archetype}${level}`;
   return(
     <svg width={size} height={size} viewBox="0 0 220 220" fill="none" style={{overflow:"visible"}}>
@@ -592,8 +597,21 @@ function HeroAvatar({archetype,level=1,size=200,animate=true,mood=3,darkDay=fals
       <ellipse cx="110" cy="115" rx="74" ry="90" fill={`url(#BL${id})`} style={animate?{animation:darkDay?"dark-breathe 6s ease-in-out infinite":"aura-breathe 4s ease-in-out infinite"}:{}}/>
       <ellipse cx="110" cy="202" rx={46+stage*10} ry={11+stage*3} fill={`url(#GL${id})`} style={animate?{animation:"ground-pulse 3s ease-in-out infinite"}:{}}/>
       {hasAura&&!darkDay&&<ellipse cx="110" cy="115" rx="92" ry="108" fill={ac} fillOpacity="0.08" stroke={ac} strokeWidth="1" strokeOpacity="0.3" style={{animation:"ring-spin 8s linear infinite"}}/>}
-      {hasFUE&&!darkDay&&<ellipse cx="110" cy="115" rx="100" ry="116" fill="none" stroke={C.cta} strokeWidth="0.8" strokeOpacity="0.2" style={{animation:"ring-spin 12s linear infinite reverse"}}/>}
-      {hasSAB&&!darkDay&&<ellipse cx="110" cy="115" rx="105" ry="121" fill="none" stroke={C.green} strokeWidth="0.6" strokeOpacity="0.18" style={{animation:"ring-spin 17s linear infinite"}}/>}
+      {/* ARTIFACT RINGS - clearly visible, color-coded */}
+      {hasFUE&&!darkDay&&<><ellipse cx="110" cy="115" rx="100" ry="116" fill="none" stroke={C.cta} strokeWidth="2.5" strokeOpacity="0.7" strokeDasharray="8 5" style={{animation:"ring-spin 9s linear infinite reverse"}} filter={`url(#GA${archetype})`}/><ellipse cx="110" cy="115" rx="100" ry="116" fill={C.cta} fillOpacity="0.06"/></>}
+      {hasSAB&&!darkDay&&<><ellipse cx="110" cy="115" rx="107" ry="124" fill="none" stroke={C.green} strokeWidth="2.5" strokeOpacity="0.7" strokeDasharray="6 4" style={{animation:"ring-spin 13s linear infinite"}} filter={`url(#GA${archetype})`}/><ellipse cx="110" cy="115" rx="107" ry="124" fill={C.green} fillOpacity="0.05"/></>}
+      {hasVOL&&!darkDay&&<><ellipse cx="110" cy="115" rx="114" ry="132" fill="none" stroke={C.purple} strokeWidth="2.5" strokeOpacity="0.7" strokeDasharray="4 6" style={{animation:"ring-spin 17s linear infinite reverse"}} filter={`url(#GA${archetype})`}/><ellipse cx="110" cy="115" rx="114" ry="132" fill={C.purple} fillOpacity="0.04"/></>}
+      {/* Artifact glow badges - icons floating around avatar */}
+      {artifactCount>0&&!darkDay&&equipped.slice(0,4).map((artId,i)=>{
+        const art=ARTIFACTS.find(a=>a.id===artId);if(!art)return null;
+        const angle=(i/Math.max(equipped.length,1))*Math.PI*2 - Math.PI/2;
+        const r=88+stage*4;
+        const bx=110+Math.cos(angle)*r, by=118+Math.sin(angle)*r*0.55;
+        return<g key={artId} style={{animation:`float-p ${2.8+i*0.6}s ${i*0.4}s ease-in-out infinite alternate`}}>
+          <circle cx={bx} cy={by} r="11" fill={art.color+"33"} stroke={art.color} strokeWidth="1.2"/>
+          <text x={bx} y={by+4} textAnchor="middle" fontSize="11">{art.icon}</text>
+        </g>;
+      })}
       {showFuture&&!darkDay&&<g opacity="0.11" style={{animation:"future-pulse 4s ease-in-out infinite"}}><ellipse cx="110" cy="118" rx="88" ry="106" fill={ac} fillOpacity="0.06"/><rect x="76" y="150" width="20" height="50" rx="10" fill={ac}/><rect x="124" y="150" width="20" height="50" rx="10" fill={ac}/><rect x="70" y="98" width="80" height="60" rx="16" fill={ac}/><ellipse cx="70" cy="112" rx="16" ry="13" fill={ac}/><ellipse cx="150" cy="112" rx="16" ry="13" fill={ac}/><ellipse cx="110" cy="70" rx="32" ry="34" fill={ac}/><ellipse cx="110" cy="36" rx="34" ry="12" fill={ac}/></g>}
       {hasWings&&!darkDay&&<g style={{animation:"wings-flap 3s ease-in-out infinite"}}><path d="M 62 115 C 20 80, 5 50, 30 30 C 45 20, 60 40, 62 115" fill={ac} fillOpacity="0.15" stroke={ac} strokeWidth="0.8" strokeOpacity="0.5"/><path d="M 158 115 C 200 80, 215 50, 190 30 C 175 20, 160 40, 158 115" fill={ac} fillOpacity="0.15" stroke={ac} strokeWidth="0.8" strokeOpacity="0.5"/></g>}
       {darkDay&&animate&&[30,70,110,150,190,50,90,130,170].map((x,i)=><rect key={i} x={x} y={-10} width="1.2" height="8" rx="1" fill="#4b5563" opacity="0.35" style={{animation:`rain-fall ${1.2+(i%4)*0.3}s ${i*0.18}s linear infinite`}}/>)}
@@ -616,6 +634,12 @@ function HeroAvatar({archetype,level=1,size=200,animate=true,mood=3,darkDay=fals
       <ellipse cx="110" cy="78" rx="25" ry="27" fill={ac} fillOpacity={bl*0.35} filter={`url(#GB${archetype})`}/>
       <ellipse cx="110" cy="78" rx="25" ry="27" fill="none" stroke={ac} strokeWidth={stage>=2?0.8:0.3} strokeOpacity={stage>=2&&!darkDay?0.32:0.1}/>
       {hasCrown&&!darkDay&&<g><path d="M 90 54 L 95 42 L 110 50 L 125 42 L 130 54 Z" fill={ac} fillOpacity="0.6" stroke={ac} strokeWidth="0.8"/><ellipse cx="110" cy="42" rx="30" ry="10" fill={ac} fillOpacity="0.12" filter={`url(#GB${archetype})`}/>{[95,110,125].map((x,i)=><circle key={i} cx={x} cy={i===1?41:43} r="2.5" fill={ac} opacity="0.9" filter={`url(#GA${archetype})`}/>)}</g>}
+      {/* Helmet from FUE artifact - visible visor over robot head */}
+      {hasHelmet&&!darkDay&&!hasCrown&&<g><path d="M 88 72 Q 88 52 110 50 Q 132 52 132 72 L 130 76 Q 110 72 90 76 Z" fill={C.cta} fillOpacity="0.22" stroke={C.cta} strokeWidth="1" strokeOpacity="0.6"/><path d="M 95 73 Q 110 69 125 73" stroke={C.cta} strokeWidth="1.5" fill="none" strokeOpacity="0.8" strokeLinecap="round"/></g>}
+      {/* Glasses from SAB artifact */}
+      {hasGlasses&&!darkDay&&<g><rect x="96" y="70" width="12" height="8" rx="4" fill="none" stroke={C.green} strokeWidth="1.2" strokeOpacity="0.8"/><rect x="112" y="70" width="12" height="8" rx="4" fill="none" stroke={C.green} strokeWidth="1.2" strokeOpacity="0.8"/><line x1="108" y1="74" x2="112" y2="74" stroke={C.green} strokeWidth="1" strokeOpacity="0.7"/></g>}
+      {/* Cape from VOL artifact */}
+      {hasCape&&!darkDay&&<g style={{animation:"wings-flap 4s ease-in-out infinite"}}><path d="M 79 120 Q 60 160 65 190 Q 80 175 90 155 Z" fill={C.purple} fillOpacity="0.18" stroke={C.purple} strokeWidth="0.8" strokeOpacity="0.5"/><path d="M 141 120 Q 160 160 155 190 Q 140 175 130 155 Z" fill={C.purple} fillOpacity="0.18" stroke={C.purple} strokeWidth="0.8" strokeOpacity="0.5"/></g>}
       {hybrid&&!darkDay&&<><circle cx="79" cy="105" r="4" fill={hybrid.color} opacity="0.8" filter={`url(#GA${archetype})`} style={{animation:"hybrid-pulse 2s ease-in-out infinite"}}/><circle cx="141" cy="105" r="4" fill={hybrid.color} opacity="0.8" filter={`url(#GA${archetype})`} style={{animation:"hybrid-pulse 2s 0.5s ease-in-out infinite"}}/></>}
       <path d={`M ${103-eyeW} ${74-eyeH-5} Q 103 ${74-eyeH-7} ${103+eyeW} ${74-eyeH-5}`} stroke={ac} strokeWidth="1.2" fill="none" strokeOpacity={darkDay?0.2:0.5} strokeLinecap="round"/>
       <path d={`M ${117-eyeW} ${74-eyeH-5} Q 117 ${74-eyeH-7} ${117+eyeW} ${74-eyeH-5}`} stroke={ac} strokeWidth="1.2" fill="none" strokeOpacity={darkDay?0.2:0.5} strokeLinecap="round"/>
@@ -904,6 +928,7 @@ export default function App(){
   const[waterCompleted,setWaterCompleted]=useState(0);
   const[moodDays,setMoodDays]=useState(0);
   const[dayPerfect,setDayPerfect]=useState(0);
+  const[lastOpenedDate,setLastOpenedDate]=useState(null); // NEW: track last open date
   const[levelUpData,setLevelUpData]=useState(null);
   const[showDisclaimer,setShowDisclaimer]=useState(false);
   const[showTutorial,setShowTutorial]=useState(false);
@@ -940,17 +965,54 @@ export default function App(){
       if(s.waterCompleted)setWaterCompleted(s.waterCompleted);
       if(s.moodDays)setMoodDays(s.moodDays);
       if(s.dayPerfect)setDayPerfect(s.dayPerfect);
+      if(s.lastOpenedDate)setLastOpenedDate(s.lastOpenedDate);
     }
   },[]);
 
   useEffect(()=>{
     if(step<5&&!player)return;
-    save({profile,player,missions,extraMissions,customGoals,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,equipped,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect});
-  },[profile,player,missions,extraMissions,customGoals,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,equipped,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect]);
+    save({profile,player,missions,extraMissions,customGoals,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,equipped,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect,lastOpenedDate});
+  },[profile,player,missions,extraMissions,customGoals,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,equipped,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect,lastOpenedDate]);
 
+  // AUTO NEW DAY DETECTION — runs on every app open
   useEffect(()=>{
     if(!player)return;
-    const delay=(7+Math.random()*9)*60*1000;
+    const today=new Date().toDateString();
+    if(lastOpenedDate&&lastOpenedDate!==today){
+      // It's a new day! Auto-reset and increment streak
+      setMissions(MISSIONS_DATA.map(m=>({...m,done:false})));
+      setExtraMissions([]);
+      setWater(0);
+      setMood(null);
+      setWaterXPGiven(false);
+      setPlayer(p=>{
+        if(!p)return p;
+        // Streak logic: if missed more than 1 day, reset streak
+        const lastDate=new Date(lastOpenedDate);
+        const nowDate=new Date(today);
+        const diffDays=Math.round((nowDate-lastDate)/(1000*60*60*24));
+        const newStreak=diffDays>1?1:p.streak+1;
+        return{...p,streak:newStreak};
+      });
+    }
+    setLastOpenedDate(today);
+  },[player?.level]); // runs when player is loaded or level changes
+
+  // PWA: Request notification permission
+  useEffect(()=>{
+    if(!player)return;
+    if("Notification" in window&&Notification.permission==="default"){
+      // Don't ask immediately, wait a bit so user is engaged
+      const t=setTimeout(()=>{
+        Notification.requestPermission();
+      },30000); // ask after 30s
+      return()=>clearTimeout(t);
+    }
+    // Schedule daily reminder if permission granted
+    if("Notification" in window&&Notification.permission==="granted"){
+      scheduleReminder(player.name);
+    }
+  },[player?.level]);
     const t=setTimeout(()=>{
       const m=STAR_MISSIONS[Math.floor(Math.random()*STAR_MISSIONS.length)];
       setStarMission(m);setStarTimer(90);
@@ -983,6 +1045,24 @@ export default function App(){
   const waterGoal=Math.round((parseFloat(profile.weight)||70)*0.033*10)/10;
 
   function toggleArr(k,v){setProfile(p=>({...p,[k]:p[k].includes(v)?p[k].filter(x=>x!==v):[...p[k],v]}));}
+
+  // PWA notification scheduler
+  function scheduleReminder(name){
+    if(!("Notification" in window)||Notification.permission!=="granted")return;
+    // Check if user hasn't completed missions today
+    const hasAnyDone=missions.some(m=>m.done);
+    if(!hasAnyDone){
+      // Show notification if hasn't done anything today
+      try{
+        new Notification("🤖 The Journey te espera",{
+          body:`${name}, tu robot te necesita. ¡Completa al menos una misión hoy!`,
+          icon:"/icon-192.png",
+          badge:"/icon-192.png",
+          tag:"daily-reminder",
+        });
+      }catch(e){}
+    }
+  }
   function finishSetup(){
     setPlayer({name:profile.name,archetype:profile.archetype,level:1,xp:0,xpNext:100,streak:1,joinedAt:new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})});
     setShowDisclaimer(true);
@@ -1042,10 +1122,11 @@ export default function App(){
     if(nl.length>=3&&nl.slice(-3).every(m=>m.v<=1))setTimeout(()=>setShowDarkDay(true),800);
   }
   function resetDay(){
+    // Manual reset — resets missions/water for current day without changing streak
+    // (streak is auto-managed by the new-day detection)
     setMissions(MISSIONS_DATA.map(m=>({...m,done:false})));
     setExtraMissions([]);
     setWater(0);setMood(null);setWaterXPGiven(false);
-    setPlayer(p=>p?{...p,streak:p.streak+1}:p);
   }
   function startBreath(){
     setBreathActive(true);
@@ -1204,7 +1285,6 @@ export default function App(){
         {tab==="metas"&&<MetasScreen customGoals={customGoals} setCustomGoals={setCustomGoals} addXP={addXP}/>}
         {tab==="artefactos"&&(
           <div style={{maxWidth:660,margin:"0 auto",padding:"0 0 60px"}}>
-            <TopBar onOpen={()=>{}} player={player} tab={tab} arc={arc}/>
             <div style={{padding:"0 14px"}}><p style={{fontSize:13,color:C.muted,marginBottom:16,marginTop:8}}>Equipa artefactos para potenciar tus atributos. Se desbloquean al subir de nivel.</p><ArsenalScreen level={player.level} equipped={equipped} setEquipped={setEquipped} addXP={addXP} attrs={attrs}/></div>
           </div>
         )}
