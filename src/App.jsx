@@ -1013,6 +1013,11 @@ export default function App(){
       scheduleReminder(player.name);
     }
   },[player?.level]);
+
+  // Shooting star — fires randomly while app is open
+  useEffect(()=>{
+    if(!player)return;
+    const delay=(7+Math.random()*9)*60*1000;
     const t=setTimeout(()=>{
       const m=STAR_MISSIONS[Math.floor(Math.random()*STAR_MISSIONS.length)];
       setStarMission(m);setStarTimer(90);
