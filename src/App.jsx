@@ -1233,42 +1233,81 @@ export default function App(){
       <main style={{position:"relative",zIndex:1,paddingBottom:40}}>
 
         {/* HOME */}
+        {/* HOME — PREMIUM REDESIGN */}
         {tab==="home"&&(
-          <div>
-            <div style={{position:"relative",background:arc.bg,borderBottom:`1px solid ${arc.aura}20`,padding:"18px 16px 0",overflow:"hidden"}}>
-              <div style={{position:"absolute",top:-60,right:-60,width:220,height:220,borderRadius:"50%",background:`radial-gradient(circle,${arc.aura}0c,transparent 70%)`,pointerEvents:"none"}}/>
-              <div style={{display:"flex",alignItems:"flex-end",gap:6,maxWidth:660,margin:"0 auto"}}>
-                <div style={{flexShrink:0,marginBottom:-10}}><HeroAvatar archetype={player.archetype} level={player.level} size={154} animate mood={currentMood} showFuture epicDone={epicDone} attrs={attrs} equipped={equipped}/></div>
-                <div style={{flex:1,paddingBottom:18,paddingLeft:6}}>
-                  <div style={{fontSize:10,color:C.green,letterSpacing:3,marginBottom:1}}>¡BIENVENIDO!</div>
-                  <h1 style={{fontFamily:"'Cinzel',serif",fontSize:19,color:C.text,letterSpacing:1,marginBottom:2}}>{player.name}</h1>
-                  <div style={{fontSize:9,color:arc.aura,letterSpacing:2,marginBottom:2}}>{titleInfo.title} · {titleInfo.rank}</div>
-                  <div style={{fontSize:11,color:C.muted,marginBottom:9}}>{arc.name} · Nv.<span style={{color:C.green,fontWeight:800,fontSize:15,textShadow:`0 0 10px ${C.green}`}}>{player.level}</span>{hybrid&&<span style={{fontSize:10,color:hybrid.color,marginLeft:7,background:hybrid.color+"15",borderRadius:6,padding:"2px 7px",border:`1px solid ${hybrid.color}33`}}>{hybrid.label}</span>}</div>
-                  <XPBar xp={player.xp} xpNext={player.xpNext}/>
-                  <div style={{display:"flex",gap:7,marginTop:9,flexWrap:"wrap"}}>
-                    {/* BIG STREAK COUNTER */}
-                    <div style={{border:`2px solid ${C.orange}55`,borderRadius:12,padding:"6px 14px",background:`linear-gradient(135deg,${C.orange}18,${C.orange}08)`,display:"flex",alignItems:"center",gap:6,boxShadow:`0 0 18px ${C.orange}22`,animation:player.streak>=3?"streak-bounce 0.6s ease":"none"}}>
-                      <span style={{fontSize:22,filter:`drop-shadow(0 0 6px ${C.orange})`}}>🔥</span>
-                      <div>
-                        <div style={{fontFamily:"'Cinzel',serif",fontSize:20,color:C.orange,fontWeight:900,lineHeight:1,textShadow:`0 0 12px ${C.orange}`}}>{player.streak}</div>
-                        <div style={{fontSize:8,color:C.muted,letterSpacing:1}}>días</div>
-                      </div>
-                      {(()=>{const nr=STREAK_REWARDS.find(r=>r.day>player.streak);return nr?<div style={{marginLeft:4,fontSize:9,color:C.orange,opacity:0.75}}>→{nr.day}d {nr.icon}</div>:null;})()}
-                    </div>
-                    <div style={{border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 10px",fontSize:11,color:C.muted}}>◈ <span style={{color:C.text,fontWeight:700}}>{doneMissions}/{missions.length}</span></div>
-                    <div style={{border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 10px",fontSize:11,color:C.muted}}>⚙ <span style={{color:C.orange,fontWeight:700}}>{equipped.length}</span></div>
-                    <div style={{border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 10px",fontSize:11,color:C.muted}}>🏆 <span style={{color:C.orange,fontWeight:700}}>{unlockedAchievements.length}</span></div>
-                    {lowMoodStreak&&<div onClick={()=>setShowDarkDay(true)} style={{border:`1px solid ${C.purple}33`,borderRadius:8,padding:"5px 10px",fontSize:11,color:C.purple,cursor:"pointer"}}>🌑</div>}
+          <div style={{maxWidth:660,margin:"0 auto"}}>
+
+            {/* HERO SECTION */}
+            <div style={{position:"relative",overflow:"hidden",background:`linear-gradient(180deg,${arc.aura}14 0%,${C.bg} 100%)`,borderBottom:`1px solid ${arc.aura}18`,paddingBottom:0}}>
+              <div style={{position:"absolute",top:-40,left:-40,width:260,height:260,borderRadius:"50%",background:`radial-gradient(circle,${arc.aura}18,transparent 70%)`,pointerEvents:"none"}}/>
+              <div style={{position:"absolute",top:20,right:-30,width:180,height:180,borderRadius:"50%",background:`radial-gradient(circle,${C.green}10,transparent 70%)`,pointerEvents:"none"}}/>
+              {/* App title */}
+              <div style={{padding:"12px 20px 0",display:"flex",justifyContent:"space-between",alignItems:"center",position:"relative",zIndex:2}}>
+                <div>
+                  <div style={{fontFamily:"'Cinzel',serif",fontSize:13,fontWeight:900,color:C.green,letterSpacing:5,textShadow:`0 0 12px ${C.green}88`}}>THE JOURNEY</div>
+                  <div style={{fontSize:10,color:C.muted,letterSpacing:1,marginTop:1}}>Tu vida es un videojuego</div>
+                </div>
+                {lowMoodStreak&&<div onClick={()=>setShowDarkDay(true)} style={{border:`1px solid ${C.purple}44`,borderRadius:8,padding:"5px 10px",fontSize:12,color:C.purple,cursor:"pointer",background:C.purple+"10"}}>🌑 Día oscuro</div>}
+              </div>
+              {/* Robot grande y central */}
+              <div style={{display:"flex",justifyContent:"center",position:"relative",zIndex:2,marginTop:4,marginBottom:-16}}>
+                <div style={{position:"relative"}}>
+                  <HeroAvatar archetype={player.archetype} level={player.level} size={210} animate mood={currentMood} showFuture epicDone={epicDone} attrs={attrs} equipped={equipped}/>
+                  <div style={{position:"absolute",top:8,right:-4,background:`linear-gradient(135deg,${C.green},${C.green}bb)`,borderRadius:10,padding:"4px 10px",boxShadow:`0 0 14px ${C.green}66`,border:`1px solid ${C.green}88`}}>
+                    <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:"#000",fontWeight:900,letterSpacing:1}}>NV.{player.level}</div>
                   </div>
-                  {STREAK_REWARDS.filter(r=>r.day>player.streak).slice(0,1).map(r=><div key={r.day} style={{marginTop:7,fontSize:11,color:C.orange,background:C.orange+"10",borderRadius:8,padding:"5px 10px",border:`1px solid ${C.orange}22`}}>🎁 Día {r.day}: {r.reward} — {r.day-player.streak} día{r.day-player.streak!==1?"s":""}</div>)}
-                  {doneMissions===0&&<div style={{marginTop:7,fontSize:11,color:C.green,background:C.green+"12",borderRadius:8,padding:"5px 10px",border:`1px solid ${C.green}22`}}>⚡ ¡Completa una misión para ganar XP!</div>}
                 </div>
               </div>
             </div>
-            <div style={{maxWidth:660,margin:"0 auto",padding:"12px 14px 32px"}}>
+
+            {/* IDENTITY CARD */}
+            <div style={{background:`linear-gradient(135deg,${C.card},${C.card}ee)`,border:`1px solid ${arc.aura}28`,padding:"22px 20px 16px",position:"relative",zIndex:1}}>
+              <div style={{textAlign:"center",marginBottom:14}}>
+                <h1 style={{fontFamily:"'Cinzel',serif",fontSize:28,fontWeight:900,color:C.text,letterSpacing:2,marginBottom:4,textShadow:`0 0 20px ${arc.aura}44`}}>{player.name}</h1>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,flexWrap:"wrap"}}>
+                  <span style={{fontFamily:"'Cinzel',serif",fontSize:10,color:arc.aura,letterSpacing:3}}>{titleInfo.title}</span>
+                  <span style={{fontSize:8,color:C.muted}}>·</span>
+                  <span style={{fontSize:10,color:C.muted,letterSpacing:2}}>{titleInfo.rank}</span>
+                  {hybrid&&<span style={{fontSize:10,color:hybrid.color,background:hybrid.color+"15",borderRadius:6,padding:"2px 8px",border:`1px solid ${hybrid.color}33`}}>{hybrid.label}</span>}
+                </div>
+              </div>
+              {/* XP Bar */}
+              <div style={{marginBottom:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                  <span style={{fontSize:10,color:C.muted,letterSpacing:2}}>EXPERIENCIA</span>
+                  <span style={{fontSize:11,color:C.green,fontWeight:800}}>{player.xp} <span style={{color:C.muted,fontWeight:400}}>/ {player.xpNext} XP</span></span>
+                </div>
+                <div style={{height:7,background:"#0d1524",borderRadius:4,overflow:"hidden",border:`1px solid ${C.border}`}}>
+                  <div style={{height:"100%",width:`${Math.min((player.xp/player.xpNext)*100,100)}%`,background:`linear-gradient(90deg,${C.green}66,${C.green})`,borderRadius:4,transition:"width 1s ease",boxShadow:`0 0 14px ${C.green},0 0 4px ${C.green}`}}/>
+                </div>
+              </div>
+              {/* Stats 4 cols */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
+                {[
+                  {icon:"🔥",val:player.streak,label:"Racha",c:C.orange,glow:true,hint:STREAK_REWARDS.find(r=>r.day>player.streak)?.day},
+                  {icon:"💧",val:`${water}/8`,label:"Agua",c:water>=8?C.green:water>=4?C.orange:"#60a5fa",glow:water>=8},
+                  {icon:"😴",val:`${profile.sleep}h`,label:"Sueño",c:parseFloat(profile.sleep)>=7?C.green:C.orange,glow:false},
+                  {icon:"⚖️",val:bmi||"—",label:"IMC",c:bmiColor,glow:false},
+                ].map((s,i)=>(
+                  <div key={i} style={{background:"#0d1524",border:`1.5px solid ${s.glow?s.c+"55":C.border}`,borderRadius:14,padding:"11px 6px",textAlign:"center",boxShadow:s.glow?`0 0 16px ${s.c}28`:"none",transition:"all 0.3s"}}>
+                    <div style={{fontSize:18,marginBottom:4,filter:s.glow?`drop-shadow(0 0 6px ${s.c})`:"none"}}>{s.icon}</div>
+                    <div style={{fontFamily:"'Cinzel',serif",fontSize:15,color:s.c,fontWeight:900,lineHeight:1,textShadow:s.glow?`0 0 8px ${s.c}`:"none"}}>{s.val}</div>
+                    <div style={{fontSize:8,color:C.muted,marginTop:3,letterSpacing:1}}>{s.label}</div>
+                    {s.hint&&<div style={{fontSize:7,color:s.c,marginTop:3,opacity:0.75}}>día {s.hint}</div>}
+                  </div>
+                ))}
+              </div>
+              {/* Streak reward hint when close */}
+              {(()=>{const nr=STREAK_REWARDS.find(r=>r.day>player.streak);return nr&&(nr.day-player.streak)<=3?(<div style={{background:`linear-gradient(135deg,${C.orange}12,${C.orange}06)`,border:`1px solid ${C.orange}33`,borderRadius:10,padding:"8px 14px",display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:18}}>{nr.icon}</span>
+                <span style={{fontSize:12,color:C.orange}}>¡Solo <strong>{nr.day-player.streak} día{nr.day-player.streak!==1?"s":""}</strong> para tu recompensa de día {nr.day}!</span>
+              </div>):null;})()}
+            </div>
+
+            <div style={{padding:"14px 16px 32px"}}>
               {/* Star mission */}
               {starMission&&(
-                <div style={{background:"linear-gradient(135deg,#1c1600,#0e0a00)",border:`2px solid ${C.orange}`,borderRadius:16,padding:"14px 16px",marginBottom:14,boxShadow:`0 0 32px ${C.orange}55`,animation:"star-pulse 1.5s ease-in-out infinite",position:"relative",overflow:"hidden",zIndex:5}}>
+                <div style={{background:"linear-gradient(135deg,#1c1600,#0e0a00)",border:`2px solid ${C.orange}`,borderRadius:16,padding:"14px 16px",marginBottom:14,boxShadow:`0 0 32px ${C.orange}55`,animation:"star-pulse 1.5s ease-in-out infinite",position:"relative",overflow:"hidden"}}>
                   <div style={{position:"absolute",inset:0,background:`linear-gradient(90deg,transparent,${C.orange}10,transparent)`,animation:"star-sweep 1.5s linear infinite",pointerEvents:"none"}}/>
                   <div style={{display:"flex",alignItems:"center",gap:12,position:"relative"}}>
                     <div style={{fontSize:32,filter:`drop-shadow(0 0 12px ${C.orange})`}}>🌟</div>
@@ -1282,101 +1321,85 @@ export default function App(){
                   </div>
                 </div>
               )}
-              {/* SPEECH BUBBLE ROBOT DIARY — comic style */}
+
+              {/* SPEECH BUBBLE FUTURISTA */}
               {(()=>{
-                const msgs = {
-                  perfect: [
-                    `¡${player.name}! Lo lograste. Todas las misiones. Eres exactamente quien querías ser.`,
-                    `Misiones completas, ${player.name}. Mi sistema de análisis confirma: eres imparable.`,
-                    `¡Día perfecto, ${player.name}! Esto no es suerte. Es quién eres ahora.`,
-                  ],
-                  streakHigh: [
-                    `${player.streak} días seguidos, ${player.name}. La mayoría se rinde en el día 3. Tú llevas ${player.streak}.`,
-                    `Racha de ${player.streak} días. Mi protocolo de motivación dice: esto ya es un hábito real.`,
-                    `${player.streak} días, ${player.name}. El cerebro ya no te pide esfuerzo. Solo rutina. Eso es poder.`,
-                  ],
-                  noWater: [
-                    `${player.name}, detecto deshidratación. Bebe un vaso de agua ahora. No es opcional.`,
-                    `Mis sensores alertan: solo ${water}/8 vasos. Tu cerebro funciona al ${Math.round((water/8)*30+70)}% sin agua. Mejora eso.`,
-                  ],
-                  noMissions: [
-                    `Buenos días, ${player.name}. Hoy es otro día para ser quien quieres ser. ¿Por cuál empezamos?`,
-                    `${player.name}, estoy aquí. El camino no avanza solo. Una misión, lo que sea. ¿Listo?`,
-                    `Nuevo día, ${player.name}. La versión de ti que quieres ser ya existe. Solo falta ir a buscarla.`,
-                  ],
-                  noArtifacts: [
-                    `${player.name}, sin artefactos eres poderoso. Con ellos, eres legendario. Visita el Arsenal.`,
-                  ],
-                  lowMood: [
-                    `${player.name}, detecto energía baja. Eso está bien. Solo necesitas hacer una cosa pequeña hoy.`,
-                    `Los días difíciles también cuentan, ${player.name}. Una misión fácil es mejor que ninguna.`,
-                  ],
-                  progress: [
-                    `${doneMissions}/${missions.length} misiones hoy, ${player.name}. Cada una te acerca a quien quieres ser.`,
-                    `Veo progreso real, ${player.name}. Nv.${player.level}, racha de ${player.streak} días. Esto es crecimiento.`,
-                    `${player.name}, llevas ${player.streak} días construyendo algo grande. Sigue. Falta poco para el siguiente nivel.`,
-                  ],
+                const msgs={
+                  perfect:[`¡${player.name}! Lo lograste. Todas las misiones. Eres exactamente quien querías ser.`,`Misiones completas, ${player.name}. Mi análisis confirma: eres imparable.`,`¡Día perfecto, ${player.name}! Esto no es suerte. Es quién eres ahora.`],
+                  streakHigh:[`${player.streak} días seguidos, ${player.name}. La mayoría se rinde en el día 3. Tú llevas ${player.streak}.`,`Racha de ${player.streak} días. Esto ya es un hábito real en tu cerebro.`,`${player.streak} días, ${player.name}. El cerebro ya no te pide esfuerzo. Eso es poder.`],
+                  noWater:[`${player.name}, detecto deshidratación. Bebe un vaso de agua ahora. No es opcional.`,`Solo ${water}/8 vasos. Tu cerebro funciona al ${Math.round((water/8)*30+70)}% sin agua.`],
+                  noMissions:[`Buenos días, ${player.name}. Hoy es otro día para ser quien quieres ser. ¿Por cuál empezamos?`,`${player.name}, estoy aquí. El camino no avanza solo. Una misión, lo que sea.`,`Nuevo día. La versión de ti que quieres ser ya existe. Solo falta ir a buscarla.`],
+                  noArtifacts:[`${player.name}, sin artefactos eres poderoso. Con ellos, eres legendario. Visita el Arsenal.`],
+                  lowMood:[`${player.name}, detecto energía baja. Solo necesitas hacer una cosa pequeña hoy.`,`Los días difíciles también cuentan. Una misión fácil es mejor que ninguna.`],
+                  progress:[`${doneMissions}/${missions.length} misiones hoy, ${player.name}. Cada una te acerca a quien quieres ser.`,`Veo progreso real, ${player.name}. Nv.${player.level}, racha de ${player.streak} días.`,`Llevas ${player.streak} días construyendo algo grande. Falta poco para el siguiente nivel.`],
                 };
                 let pool;
-                if(doneMissions===missions.length) pool=msgs.perfect;
-                else if(player.streak>=7) pool=msgs.streakHigh;
-                else if(currentMood<=1) pool=msgs.lowMood;
-                else if(water<3) pool=msgs.noWater;
-                else if(equipped.length===0) pool=msgs.noArtifacts;
-                else if(doneMissions===0) pool=msgs.noMissions;
+                if(doneMissions===missions.length)pool=msgs.perfect;
+                else if(player.streak>=7)pool=msgs.streakHigh;
+                else if(currentMood<=1)pool=msgs.lowMood;
+                else if(water<3)pool=msgs.noWater;
+                else if(equipped.length===0)pool=msgs.noArtifacts;
+                else if(doneMissions===0)pool=msgs.noMissions;
                 else pool=msgs.progress;
                 const msg=pool[Math.floor(Date.now()/86400000)%pool.length];
-                const auraColor=arc?.aura||C.green;
+                const ac=arc?.aura||C.green;
                 return(
-                  <div style={{marginBottom:16,position:"relative"}}>
-                    {/* Robot avatar small */}
-                    <div style={{display:"flex",alignItems:"flex-end",gap:0}}>
-                      <div style={{flexShrink:0,marginBottom:4}}>
-                        <HeroAvatar archetype={player.archetype} level={player.level} size={68} animate mood={currentMood} epicDone={epicDone} attrs={attrs} equipped={equipped}/>
-                      </div>
-                      {/* Speech bubble */}
-                      <div style={{flex:1,marginLeft:4,position:"relative",animation:"bubble-pop 0.45s cubic-bezier(0.34,1.56,0.64,1)"}}>
-                        {/* Bubble tail pointing left toward robot */}
-                        <div style={{position:"absolute",left:-10,bottom:18,width:0,height:0,borderTop:"8px solid transparent",borderBottom:"8px solid transparent",borderRight:`10px solid ${auraColor}33`}}/>
-                        <div style={{position:"absolute",left:-8,bottom:19,width:0,height:0,borderTop:"7px solid transparent",borderBottom:"7px solid transparent",borderRight:`9px solid #1E293B`}}/>
-                        {/* Bubble body */}
-                        <div style={{background:C.card,border:`1.5px solid ${auraColor}44`,borderRadius:"16px 16px 16px 4px",padding:"11px 14px",boxShadow:`0 0 20px ${auraColor}18, inset 0 0 16px ${auraColor}06`}}>
-                          <div style={{fontSize:9,color:auraColor,letterSpacing:2.5,marginBottom:5,fontWeight:700}}>🤖 ROBOT DICE</div>
-                          <p style={{fontSize:13,color:C.text,lineHeight:1.65,fontStyle:"italic",margin:0}}>"{msg}"</p>
-                          {/* Typing dots when no missions done */}
-                          {doneMissions===0&&<div style={{display:"flex",gap:3,marginTop:8}}>
-                            {[0,1,2].map(i=><div key={i} style={{width:5,height:5,borderRadius:"50%",background:auraColor,opacity:0.5,animation:`dot-typing 1.2s ${i*0.2}s ease-in-out infinite`}}/>)}
-                          </div>}
-                        </div>
-                      </div>
+                  <div style={{marginBottom:16,animation:"bubble-pop 0.45s cubic-bezier(0.34,1.56,0.64,1)"}}>
+                    <div style={{fontSize:9,color:ac,letterSpacing:3,marginBottom:6,display:"flex",alignItems:"center",gap:6,fontWeight:700}}>
+                      <div style={{width:16,height:16,borderRadius:5,background:ac+"22",border:`1px solid ${ac}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>🤖</div>
+                      TU ROBOT DICE
+                    </div>
+                    <div style={{position:"relative",background:`linear-gradient(135deg,${C.card},#151f30)`,border:`1.5px solid ${ac}55`,borderRadius:18,padding:"16px 18px",boxShadow:`0 0 32px ${ac}22,0 0 8px ${ac}10,inset 0 0 24px ${ac}06`}}>
+                      <div style={{position:"absolute",top:14,right:16,width:6,height:6,borderRadius:"50%",background:ac,opacity:0.5,boxShadow:`0 0 8px ${ac}`,animation:"pulse-soft 2s ease-in-out infinite"}}/>
+                      <div style={{position:"absolute",bottom:-9,left:28,width:0,height:0,borderLeft:"9px solid transparent",borderRight:"9px solid transparent",borderTop:`9px solid ${ac}55`}}/>
+                      <div style={{position:"absolute",bottom:-7,left:30,width:0,height:0,borderLeft:"7px solid transparent",borderRight:"7px solid transparent",borderTop:"7px solid #151f30"}}/>
+                      <p style={{fontSize:14,color:C.text,lineHeight:1.7,margin:0,fontWeight:400}}>{msg}</p>
+                      {doneMissions===0&&<div style={{display:"flex",gap:4,marginTop:10}}>{[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:"50%",background:ac,opacity:0.4,animation:`dot-typing 1.2s ${i*0.22}s ease-in-out infinite`}}/>)}</div>}
                     </div>
                   </div>
                 );
               })()}
-              {/* Stats */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:12}}>
-                {[{icon:"💧",val:`${water}/8`,label:"Agua",badge:water>=8?"¡Lleno!":water>=4?"Mitad":"Seco",c:water>=8?C.green:water>=4?C.orange:"#60a5fa"},{icon:"😴",val:`${profile.sleep}h`,label:"Sueño",badge:parseFloat(profile.sleep)>=7?"Óptimo":"Mejorar",c:parseFloat(profile.sleep)>=7?C.green:C.orange},{icon:"🔥",val:`${player.streak}d`,label:"Racha",badge:STREAK_REWARDS.find(r=>r.day>player.streak)?`→${STREAK_REWARDS.find(r=>r.day>player.streak)?.day}d`:"¡Top!",c:C.orange},{icon:"⚖️",val:bmi||"—",label:"IMC",badge:bmiLabel||"—",c:bmiColor}].map((s,i)=>(
-                  <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"10px 6px",textAlign:"center"}}><div style={{fontSize:16,marginBottom:3}}>{s.icon}</div><div style={{fontFamily:"'Cinzel',serif",fontSize:13,color:C.text}}>{s.val}</div><div style={{fontSize:8,color:C.muted,margin:"2px 0 4px"}}>{s.label}</div><div style={{fontSize:8,borderRadius:5,padding:"2px 3px",background:s.c+"20",color:s.c,fontWeight:700}}>{s.badge}</div></div>
-                ))}
-              </div>
+
+              {/* Water Tank */}
               <WaterTank water={water} setWater={setWater} addXP={addXP} waterXPGiven={waterXPGiven} setWaterXPGiven={setWaterXPGiven} onWaterComplete={onWaterComplete}/>
+
               {/* Mood */}
-              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:16,padding:"16px 18px",marginBottom:12}}>
-                <div style={{fontSize:10,color:C.muted,letterSpacing:3,marginBottom:12}}>ESTADO DE ÁNIMO</div>
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:16,padding:"14px 16px",marginBottom:12}}>
+                <div style={{fontSize:9,color:C.muted,letterSpacing:3,marginBottom:10,fontWeight:700}}>ESTADO DE ÁNIMO</div>
                 <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:moodLog.length?10:0}}>
-                  {MOODS.map(m=><button key={m.v} onClick={()=>logMood(m.v)} style={{border:`1.5px solid ${mood===m.v?arc.aura:C.border}`,borderRadius:12,padding:"10px 12px",background:mood===m.v?arc.aura+"18":"transparent",cursor:"pointer",transition:"all 0.2s",boxShadow:mood===m.v?`0 0 12px ${arc.aura}44`:"none"}}><div style={{fontSize:20}}>{m.e}</div><div style={{fontSize:9,color:C.muted,marginTop:3}}>{m.l}</div></button>)}
+                  {MOODS.map(m=><button key={m.v} onClick={()=>logMood(m.v)} style={{flex:1,border:`1.5px solid ${mood===m.v?arc.aura:C.border}`,borderRadius:12,padding:"10px 4px",background:mood===m.v?arc.aura+"18":"transparent",cursor:"pointer",transition:"all 0.2s",boxShadow:mood===m.v?`0 0 12px ${arc.aura}44`:"none"}}><div style={{fontSize:22}}>{m.e}</div><div style={{fontSize:9,color:C.muted,marginTop:3}}>{m.l}</div></button>)}
                 </div>
                 {moodLog.length>0&&<div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{moodLog.slice(-5).map((m,i)=><span key={i} style={{background:C.bg,borderRadius:6,padding:"3px 8px",fontSize:10,color:C.muted,border:`1px solid ${C.border}`}}>{MOODS[m.v-1]?.e} {m.t}</span>)}</div>}
               </div>
+
               {/* Missions preview */}
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:16,padding:"16px 18px",marginBottom:12}}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}><span style={{fontSize:10,color:C.muted,letterSpacing:3}}>MISIONES DE HOY</span><button onClick={()=>setTab("misiones")} style={{background:"none",border:"none",color:C.green,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>Ver todas →</button></div>
-                <div style={{height:4,background:C.bg,borderRadius:2,overflow:"hidden",marginBottom:12}}><div style={{height:"100%",width:`${(doneMissions/missions.length)*100}%`,background:`linear-gradient(90deg,${C.green}55,${C.green})`,borderRadius:2,transition:"width 0.6s",boxShadow:`0 0 10px ${C.green}`}}/></div>
-                {missions.slice(0,4).map((m,i)=>{const wL=m.id===3&&water<8&&!m.done;return(<div key={m.id} onClick={()=>completeMission(i)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:i<3?`1px solid ${C.bg}`:"none",cursor:wL?"not-allowed":"pointer",opacity:m.done?0.4:1,transition:"all 0.4s",transform:completedAnim===i?"scale(1.02)":"scale(1)",animation:completedAnim===i?"mission-complete-glow 0.7s ease":"none"}}><div style={{width:22,height:22,border:`1.5px solid ${m.done?C.green:C.border}`,borderRadius:6,background:m.done?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#000",fontWeight:800,flexShrink:0,transition:"all 0.4s",boxShadow:m.done?`0 0 10px ${C.green}`:"none"}}>{m.done?"✓":""}</div><span style={{fontSize:12,flex:1,color:"#94a3b8"}}>{m.icon} {m.title}{wL?<span style={{fontSize:10,color:C.muted}}> (llena el tanque)</span>:""}</span>{m.difficulty==="epic"&&<span style={{fontSize:9,color:C.purple,background:C.purple+"15",borderRadius:5,padding:"2px 5px"}}>ÉPICA</span>}<span style={{fontSize:10,color:C.green,border:`1px solid ${C.green}30`,borderRadius:5,padding:"2px 7px",fontWeight:700}}>+{m.xp}</span></div>);})}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div>
+                    <div style={{fontSize:9,color:C.muted,letterSpacing:3,fontWeight:700}}>MISIONES DE HOY</div>
+                    <div style={{fontSize:11,color:C.text,marginTop:2}}><span style={{color:doneMissions===missions.length?C.green:C.text,fontWeight:700}}>{doneMissions}</span><span style={{color:C.muted}}>/{missions.length} completadas</span></div>
+                  </div>
+                  <button onClick={()=>setTab("misiones")} style={{background:C.green+"14",border:`1px solid ${C.green}33`,color:C.green,borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:"inherit",fontWeight:600}}>Ver todas →</button>
+                </div>
+                <div style={{height:5,background:"#0d1524",borderRadius:3,overflow:"hidden",marginBottom:14,border:`1px solid ${C.border}`}}>
+                  <div style={{height:"100%",width:`${(doneMissions/missions.length)*100}%`,background:`linear-gradient(90deg,${C.green}66,${C.green})`,borderRadius:3,transition:"width 0.6s",boxShadow:`0 0 10px ${C.green}`}}/>
+                </div>
+                {missions.slice(0,4).map((m,i)=>{
+                  const wL=m.id===3&&water<8&&!m.done;
+                  return(
+                    <div key={m.id} onClick={()=>completeMission(i)} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:i<3?`1px solid ${C.bg}`:"none",cursor:wL?"not-allowed":"pointer",opacity:m.done?0.38:1,transition:"all 0.4s",transform:completedAnim===i?"scale(1.02)":"scale(1)",animation:completedAnim===i?"mission-complete-glow 0.7s ease":"none"}}>
+                      <div style={{width:26,height:26,border:`2px solid ${m.done?C.green:m.difficulty==="epic"?C.purple:C.border}`,borderRadius:8,background:m.done?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:m.done?"#000":m.difficulty==="epic"?C.purple:C.muted,fontWeight:900,flexShrink:0,transition:"all 0.4s",boxShadow:m.done?`0 0 12px ${C.green}`:""}}>{m.done?"✓":m.icon}</div>
+                      <span style={{fontSize:13,flex:1,color:m.done?"#94a3b8":C.text,fontWeight:m.done?400:500}}>{m.title}{wL?<span style={{fontSize:10,color:C.muted,marginLeft:6}}>(llena el tanque)</span>:""}</span>
+                      {m.difficulty==="epic"&&!m.done&&<span style={{fontSize:9,color:C.purple,background:C.purple+"15",borderRadius:5,padding:"2px 6px",fontWeight:700}}>ÉPICA</span>}
+                      <span style={{fontSize:11,color:C.green,fontWeight:700,flexShrink:0}}>+{m.xp}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         )}
+
 
         {tab==="mapa"&&(
           <div style={{maxWidth:700,margin:"0 auto",padding:"16px 14px 40px"}}>
