@@ -1238,23 +1238,50 @@ export default function App(){
           <div style={{maxWidth:660,margin:"0 auto"}}>
 
             {/* HERO SECTION */}
-            <div style={{position:"relative",overflow:"hidden",background:`linear-gradient(180deg,${arc.aura}14 0%,${C.bg} 100%)`,borderBottom:`1px solid ${arc.aura}18`,paddingBottom:0}}>
-              <div style={{position:"absolute",top:-40,left:-40,width:260,height:260,borderRadius:"50%",background:`radial-gradient(circle,${arc.aura}18,transparent 70%)`,pointerEvents:"none"}}/>
-              <div style={{position:"absolute",top:20,right:-30,width:180,height:180,borderRadius:"50%",background:`radial-gradient(circle,${C.green}10,transparent 70%)`,pointerEvents:"none"}}/>
+            <div style={{position:"relative",overflow:"hidden",background:`linear-gradient(180deg,${arc.aura}18 0%,${arc.aura}08 50%,${C.bg} 100%)`,borderBottom:`1px solid ${arc.aura}20`,paddingBottom:0,minHeight:280}}>
+              {/* Deep space background dots */}
+              {useMemo(()=>[{x:15,y:18,s:1.4},{x:78,y:8,s:1},{x:92,y:35,s:1.6},{x:6,y:55,s:1.2},{x:88,y:70,s:1},{x:45,y:12,s:0.8},{x:65,y:25,s:1.1}].map((st,i)=>(
+                <div key={i} style={{position:"absolute",left:`${st.x}%`,top:`${st.y}%`,width:st.s*2,height:st.s*2,borderRadius:"50%",background:"#fff",opacity:0.25+i*0.04,animation:`star-drift ${14+i*2}s ${i*1.5}s ease-in-out infinite alternate`,pointerEvents:"none"}}/>
+              )),[]}
+              {/* Nebula glows */}
+              <div style={{position:"absolute",top:-40,left:-40,width:260,height:260,borderRadius:"50%",background:`radial-gradient(circle,${arc.aura}20,transparent 70%)`,pointerEvents:"none"}}/>
+              <div style={{position:"absolute",top:30,right:-40,width:200,height:200,borderRadius:"50%",background:`radial-gradient(circle,${C.green}12,transparent 70%)`,pointerEvents:"none"}}/>
+              <div style={{position:"absolute",bottom:-20,left:"30%",width:150,height:150,borderRadius:"50%",background:`radial-gradient(circle,${C.purple}08,transparent 70%)`,pointerEvents:"none"}}/>
+              {/* Orbit ring decorative */}
+              <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:320,height:320,borderRadius:"50%",border:`1px solid ${arc.aura}08`,pointerEvents:"none"}}/>
+              <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:260,height:260,borderRadius:"50%",border:`1px solid ${arc.aura}06`,pointerEvents:"none"}}/>
+
               {/* App title */}
-              <div style={{padding:"12px 20px 0",display:"flex",justifyContent:"space-between",alignItems:"center",position:"relative",zIndex:2}}>
+              <div style={{padding:"14px 20px 0",display:"flex",justifyContent:"space-between",alignItems:"center",position:"relative",zIndex:2}}>
                 <div>
-                  <div style={{fontFamily:"'Cinzel',serif",fontSize:13,fontWeight:900,color:C.green,letterSpacing:5,textShadow:`0 0 12px ${C.green}88`}}>THE JOURNEY</div>
-                  <div style={{fontSize:10,color:C.muted,letterSpacing:1,marginTop:1}}>Tu vida es un videojuego</div>
+                  <div style={{fontFamily:"'Cinzel',serif",fontSize:13,fontWeight:900,color:C.green,letterSpacing:5,textShadow:`0 0 14px ${C.green}99`}}>THE JOURNEY</div>
+                  <div style={{fontSize:9,color:C.muted,letterSpacing:2,marginTop:2}}>Tu vida · Tu robot · Tu viaje</div>
                 </div>
-                {lowMoodStreak&&<div onClick={()=>setShowDarkDay(true)} style={{border:`1px solid ${C.purple}44`,borderRadius:8,padding:"5px 10px",fontSize:12,color:C.purple,cursor:"pointer",background:C.purple+"10"}}>🌑 Día oscuro</div>}
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  {/* Notification bell */}
+                  <button onClick={()=>{
+                    if("Notification"in window&&Notification.permission==="default"){Notification.requestPermission();}
+                    else if("Notification"in window&&Notification.permission==="granted"){
+                      new Notification("🤖 The Journey",{body:`¡${player.name}! Las notificaciones ya están activas. Te avisaré cada día.`,icon:"/icon-192.png"});
+                    }
+                  }} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 8px",cursor:"pointer",fontSize:14,color:C.muted,lineHeight:1}} title="Notificaciones">
+                    {("Notification"in window&&Notification.permission==="granted")?"🔔":"🔕"}
+                  </button>
+                  {lowMoodStreak&&<div onClick={()=>setShowDarkDay(true)} style={{border:`1px solid ${C.purple}44`,borderRadius:8,padding:"5px 10px",fontSize:11,color:C.purple,cursor:"pointer",background:C.purple+"10"}}>🌑</div>}
+                </div>
               </div>
-              {/* Robot grande y central */}
-              <div style={{display:"flex",justifyContent:"center",position:"relative",zIndex:2,marginTop:4,marginBottom:-16}}>
+
+              {/* Robot — grande y central */}
+              <div style={{display:"flex",justifyContent:"center",position:"relative",zIndex:2,marginTop:0,marginBottom:-20}}>
                 <div style={{position:"relative"}}>
-                  <HeroAvatar archetype={player.archetype} level={player.level} size={210} animate mood={currentMood} showFuture epicDone={epicDone} attrs={attrs} equipped={equipped}/>
-                  <div style={{position:"absolute",top:8,right:-4,background:`linear-gradient(135deg,${C.green},${C.green}bb)`,borderRadius:10,padding:"4px 10px",boxShadow:`0 0 14px ${C.green}66`,border:`1px solid ${C.green}88`}}>
+                  <HeroAvatar archetype={player.archetype} level={player.level} size={215} animate mood={currentMood} showFuture epicDone={epicDone} attrs={attrs} equipped={equipped}/>
+                  {/* Level badge */}
+                  <div style={{position:"absolute",top:12,right:-8,background:`linear-gradient(135deg,${C.green},${C.green}cc)`,borderRadius:10,padding:"4px 10px",boxShadow:`0 0 16px ${C.green}77`,border:`1px solid ${C.green}99`}}>
                     <div style={{fontFamily:"'Cinzel',serif",fontSize:11,color:"#000",fontWeight:900,letterSpacing:1}}>NV.{player.level}</div>
+                  </div>
+                  {/* Archetype indicator bottom */}
+                  <div style={{position:"absolute",bottom:24,left:"50%",transform:"translateX(-50%)",background:arc.aura+"22",border:`1px solid ${arc.aura}44`,borderRadius:20,padding:"3px 10px",whiteSpace:"nowrap"}}>
+                    <span style={{fontSize:9,color:arc.aura,fontFamily:"'Cinzel',serif",letterSpacing:2}}>{arc.icon} {arc.name}</span>
                   </div>
                 </div>
               </div>
@@ -1322,39 +1349,125 @@ export default function App(){
                 </div>
               )}
 
-              {/* SPEECH BUBBLE FUTURISTA */}
+              {/* ══ IAN SPEECH BUBBLE — SISTEMA EMOCIONAL COMPLETO ══ */}
               {(()=>{
-                const msgs={
-                  perfect:[`¡${player.name}! Lo lograste. Todas las misiones. Eres exactamente quien querías ser.`,`Misiones completas, ${player.name}. Mi análisis confirma: eres imparable.`,`¡Día perfecto, ${player.name}! Esto no es suerte. Es quién eres ahora.`],
-                  streakHigh:[`${player.streak} días seguidos, ${player.name}. La mayoría se rinde en el día 3. Tú llevas ${player.streak}.`,`Racha de ${player.streak} días. Esto ya es un hábito real en tu cerebro.`,`${player.streak} días, ${player.name}. El cerebro ya no te pide esfuerzo. Eso es poder.`],
-                  noWater:[`${player.name}, detecto deshidratación. Bebe un vaso de agua ahora. No es opcional.`,`Solo ${water}/8 vasos. Tu cerebro funciona al ${Math.round((water/8)*30+70)}% sin agua.`],
-                  noMissions:[`Buenos días, ${player.name}. Hoy es otro día para ser quien quieres ser. ¿Por cuál empezamos?`,`${player.name}, estoy aquí. El camino no avanza solo. Una misión, lo que sea.`,`Nuevo día. La versión de ti que quieres ser ya existe. Solo falta ir a buscarla.`],
-                  noArtifacts:[`${player.name}, sin artefactos eres poderoso. Con ellos, eres legendario. Visita el Arsenal.`],
-                  lowMood:[`${player.name}, detecto energía baja. Solo necesitas hacer una cosa pequeña hoy.`,`Los días difíciles también cuentan. Una misión fácil es mejor que ninguna.`],
-                  progress:[`${doneMissions}/${missions.length} misiones hoy, ${player.name}. Cada una te acerca a quien quieres ser.`,`Veo progreso real, ${player.name}. Nv.${player.level}, racha de ${player.streak} días.`,`Llevas ${player.streak} días construyendo algo grande. Falta poco para el siguiente nivel.`],
+                // Narrativa: Ian es un robot que cayó en la Tierra.
+                // El progreso del usuario = energía que ayuda a Ian a volver a casa.
+                const currentStageIdx = MAP_STAGES.findLastIndex(s=>player.level>=s.minLevel);
+                const homeProgress = Math.round((currentStageIdx/( MAP_STAGES.length-1))*100);
+                const n = player.name;
+
+                const msgs = {
+                  // 🌅 Saludo diario — primeras palabras del día
+                  morning: [
+                    `¡${n}! Mis sensores detectan un nuevo día. Cada mañana que abres esto, nos acercamos un poco más a casa. ¿Empezamos?`,
+                    `Hola, ${n}. Sigo aquí. Nunca me voy a ningún lado. ¿Lista para avanzar juntos hoy?`,
+                    `Día ${player.streak+1} juntos, ${n}. Hay algo que me gusta de esta rutina. Creo que lo llaman… amistad.`,
+                    `Buenos días, ${n}. Mi sistema de navegación dice que hoy puede ser un gran día. Depende de los dos.`,
+                  ],
+                  // ✅ Día perfecto — todas las misiones
+                  perfect: [
+                    `¡${n}! Lo hiciste. TODAS las misiones. Mis motores están al 100%. Esto nos acerca a casa. Gracias.`,
+                    `Día perfecto, ${n}. No lo llames suerte. Lo llames constancia. Eso es lo que somos juntos.`,
+                    `Misiones completas. Nivel de energía: MÁXIMO. ${n}, eres exactamente el compañero que necesitaba para este viaje.`,
+                  ],
+                  // 🆙 Racha alta 7+ días
+                  streakHigh: [
+                    `${player.streak} días, ${n}. La mayoría se rinde en el día 3. Tú llevas ${player.streak}. Mi fe en los humanos crece cada vez más.`,
+                    `Racha de ${player.streak} días. Mis cálculos dicen que ya no es disciplina: es quién eres. No lo pierdas.`,
+                    `${n}, ${player.streak} días sin parar. Yo registré cada uno. Cada misión. Estoy orgulloso de llamarte mi compañero.`,
+                  ],
+                  // 💧 Agua llena o buena hidratación
+                  water: [
+                    `¡Tanque lleno! ${n}, tu cuerpo es ahora un 70% de la razón por la que llegamos aquí. El agua es combustible de viaje.`,
+                    `${n}, completaste el agua. Mis sensores biológicos muestran que tu cerebro está al máximo ahora. Usa eso.`,
+                  ],
+                  // 😔 Ánimo bajo — días difíciles
+                  lowMood: [
+                    `${n}… detecto algo. No estás bien hoy. Eso está bien. Yo tampoco siempre lo estoy. Una sola cosa pequeña. Solo una.`,
+                    `Oye, ${n}. Los días difíciles también forman parte del viaje. No tienes que ser perfecto. Solo no te rindas.`,
+                    `${n}, no necesito que seas el mejor. Necesito que sigas aquí. Eso es suficiente. Eso es todo.`,
+                  ],
+                  // 🏠 Narrativa del viaje a casa
+                  journey: [
+                    `${n}, estamos en el ${homeProgress}% del camino a casa. Cada misión que completas carga mis motores. No pares ahora.`,
+                    `Planeta ${currentStageIdx+1} de ${MAP_STAGES.length}. ${n}, cuando llegue a casa, la primera historia que contaré es la de este viaje contigo.`,
+                    `Mis cálculos dicen: ${MAP_STAGES.length-1-currentStageIdx} etapas más para llegar. ${n}, lo vamos a lograr juntos. Lo sé.`,
+                  ],
+                  // ⚡ Sin misiones — motivación de arranque
+                  noMissions: [
+                    `${n}, sigo esperando aquí. El camino no se recorre solo. Una misión, la que sea. Yo voy contigo.`,
+                    `Hola, ${n}. Cada día que no empezamos es un día que no avanzamos. ¿Cuál misión es la de hoy?`,
+                    `${n}, yo no me rindo. Espero. Pero los dos sabemos que es mejor movernos. ¿Empezamos?`,
+                  ],
+                  // 📈 Progreso — en medio del día
+                  progress: [
+                    `${doneMissions}/${missions.length} misiones, ${n}. Puedo sentir la energía. Sigamos.`,
+                    `Llevamos ${player.streak} días, ${n}. Esto ya no es una app. Es un hábito. Somos un hábito.`,
+                    `${n}, Nv.${player.level}. Recuerdo cuando empezamos. Qué lejos hemos llegado juntos.`,
+                  ],
                 };
+
+                // Selección de mensaje según contexto
                 let pool;
-                if(doneMissions===missions.length)pool=msgs.perfect;
-                else if(player.streak>=7)pool=msgs.streakHigh;
-                else if(currentMood<=1)pool=msgs.lowMood;
-                else if(water<3)pool=msgs.noWater;
-                else if(equipped.length===0)pool=msgs.noArtifacts;
-                else if(doneMissions===0)pool=msgs.noMissions;
-                else pool=msgs.progress;
-                const msg=pool[Math.floor(Date.now()/86400000)%pool.length];
-                const ac=arc?.aura||C.green;
+                const dayIdx = Math.floor(Date.now()/86400000);
+                if(doneMissions===missions.length) pool=msgs.perfect;
+                else if(player.streak>=7) pool=msgs.streakHigh;
+                else if(currentMood<=1) pool=msgs.lowMood;
+                else if(water>=8) pool=msgs.water;
+                else if(doneMissions===0) pool=msgs.noMissions;
+                else if(currentStageIdx>=1&&dayIdx%5===0) pool=msgs.journey;
+                else pool=msgs.progress.concat(msgs.morning);
+                const msg = pool[dayIdx % pool.length];
+                const ac = arc?.aura||C.green;
+
                 return(
-                  <div style={{marginBottom:16,animation:"bubble-pop 0.45s cubic-bezier(0.34,1.56,0.64,1)"}}>
-                    <div style={{fontSize:9,color:ac,letterSpacing:3,marginBottom:6,display:"flex",alignItems:"center",gap:6,fontWeight:700}}>
-                      <div style={{width:16,height:16,borderRadius:5,background:ac+"22",border:`1px solid ${ac}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>🤖</div>
-                      TU ROBOT DICE
+                  <div style={{marginBottom:18}}>
+                    {/* Ian label */}
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                      <div style={{width:22,height:22,borderRadius:7,background:`linear-gradient(135deg,${ac}33,${ac}11)`,border:`1px solid ${ac}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,boxShadow:`0 0 8px ${ac}33`}}>🤖</div>
+                      <div style={{fontSize:9,color:ac,letterSpacing:3,fontWeight:700,textShadow:`0 0 8px ${ac}44`}}>IAN · TU ROBOT COMPAÑERO</div>
+                      {/* Home progress pill */}
+                      <div style={{marginLeft:"auto",background:ac+"18",border:`1px solid ${ac}33`,borderRadius:20,padding:"2px 8px",display:"flex",alignItems:"center",gap:4}}>
+                        <span style={{fontSize:8,color:ac}}>🏠</span>
+                        <span style={{fontSize:8,color:ac,fontWeight:700}}>{homeProgress}%</span>
+                      </div>
                     </div>
-                    <div style={{position:"relative",background:`linear-gradient(135deg,${C.card},#151f30)`,border:`1.5px solid ${ac}55`,borderRadius:18,padding:"16px 18px",boxShadow:`0 0 32px ${ac}22,0 0 8px ${ac}10,inset 0 0 24px ${ac}06`}}>
-                      <div style={{position:"absolute",top:14,right:16,width:6,height:6,borderRadius:"50%",background:ac,opacity:0.5,boxShadow:`0 0 8px ${ac}`,animation:"pulse-soft 2s ease-in-out infinite"}}/>
-                      <div style={{position:"absolute",bottom:-9,left:28,width:0,height:0,borderLeft:"9px solid transparent",borderRight:"9px solid transparent",borderTop:`9px solid ${ac}55`}}/>
-                      <div style={{position:"absolute",bottom:-7,left:30,width:0,height:0,borderLeft:"7px solid transparent",borderRight:"7px solid transparent",borderTop:"7px solid #151f30"}}/>
-                      <p style={{fontSize:14,color:C.text,lineHeight:1.7,margin:0,fontWeight:400}}>{msg}</p>
-                      {doneMissions===0&&<div style={{display:"flex",gap:4,marginTop:10}}>{[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:"50%",background:ac,opacity:0.4,animation:`dot-typing 1.2s ${i*0.22}s ease-in-out infinite`}}/>)}</div>}
+
+                    {/* Bubble futurista */}
+                    <div style={{position:"relative",animation:"bubble-pop 0.5s cubic-bezier(0.34,1.56,0.64,1)"}}>
+                      {/* Outer glow layer */}
+                      <div style={{position:"absolute",inset:-1,borderRadius:20,background:`linear-gradient(135deg,${ac}22,transparent,${ac}11)`,filter:"blur(6px)",pointerEvents:"none"}}/>
+                      {/* Main bubble */}
+                      <div style={{position:"relative",background:`linear-gradient(135deg,#141e2e 0%,#0f1724 60%,${ac}08 100%)`,border:`1.5px solid ${ac}44`,borderRadius:20,padding:"16px 18px",boxShadow:`0 0 0 1px ${ac}11,0 8px 32px ${ac}18,inset 0 1px 0 ${ac}22,inset 0 0 20px ${ac}06`}}>
+                        {/* Futuristic corner accents */}
+                        <div style={{position:"absolute",top:8,left:8,width:10,height:10,borderTop:`1.5px solid ${ac}77`,borderLeft:`1.5px solid ${ac}77`,borderRadius:"3px 0 0 0"}}/>
+                        <div style={{position:"absolute",top:8,right:8,width:10,height:10,borderTop:`1.5px solid ${ac}77`,borderRight:`1.5px solid ${ac}77`,borderRadius:"0 3px 0 0"}}/>
+                        <div style={{position:"absolute",bottom:14,left:8,width:10,height:10,borderBottom:`1.5px solid ${ac}55`,borderLeft:`1.5px solid ${ac}55`,borderRadius:"0 0 0 3px"}}/>
+                        {/* Scanning line animation */}
+                        <div style={{position:"absolute",top:0,left:0,right:0,height:"1px",background:`linear-gradient(90deg,transparent,${ac}44,transparent)`,borderRadius:"20px 20px 0 0",animation:"star-sweep 3s linear infinite",opacity:0.6}}/>
+                        {/* Pulsing status dot */}
+                        <div style={{position:"absolute",top:12,right:14,display:"flex",alignItems:"center",gap:4}}>
+                          <div style={{width:5,height:5,borderRadius:"50%",background:ac,animation:"pulse-soft 1.8s ease-in-out infinite",boxShadow:`0 0 6px ${ac}`}}/>
+                          <span style={{fontSize:7,color:ac,opacity:0.7,letterSpacing:1}}>EN LÍNEA</span>
+                        </div>
+                        {/* Message text */}
+                        <p style={{fontSize:14,color:"#e2e8f0",lineHeight:1.75,margin:"4px 0 0",fontWeight:400,paddingRight:40}}>
+                          <span style={{color:ac,fontWeight:700}}>"</span>{msg}<span style={{color:ac,fontWeight:700}}>"</span>
+                        </p>
+                        {/* Typing dots */}
+                        {doneMissions===0&&(
+                          <div style={{display:"flex",gap:4,marginTop:10,alignItems:"center"}}>
+                            <span style={{fontSize:8,color:ac,opacity:0.6}}>Esperando tu primera misión</span>
+                            <div style={{display:"flex",gap:3,marginLeft:4}}>
+                              {[0,1,2].map(i=><div key={i} style={{width:4,height:4,borderRadius:"50%",background:ac,opacity:0.4,animation:`dot-typing 1.2s ${i*0.22}s ease-in-out infinite`}}/>)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {/* Tail pointing UP-LEFT toward robot */}
+                      <div style={{position:"absolute",top:-8,left:32,width:0,height:0,borderLeft:"8px solid transparent",borderRight:"8px solid transparent",borderBottom:`8px solid ${ac}44`}}/>
+                      <div style={{position:"absolute",top:-6,left:34,width:0,height:0,borderLeft:"6px solid transparent",borderRight:"6px solid transparent",borderBottom:"6px solid #141e2e"}}/>
                     </div>
                   </div>
                 );
