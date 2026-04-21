@@ -830,7 +830,10 @@ function MetasScreen({customGoals,setCustomGoals,addXP}){
   function createGoal(){
     if(!form.title)return;
     const tmpl=TEMPLATES.find(t=>t.title===form.title);
-    const g={id:Date.now(),title:form.title,desc:form.desc,emoji:form.emoji,target:form.target,unit:form.unit,weeks:form.weeks,xpTotal:parseInt(form.weeks)*100,xpEarned:0,missions:(tmpl?.missions||[{text:"Define tu primer paso",xp:30},{text:"Toma una acción hoy",xp:50},{text:"Registra tu progreso",xp:20}]).map(m=>({...m,done:false})),createdAt:new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long"})};
+    const goalMissions=(tmpl?.missions||[{text:"Define tu primer paso",xp:30},{text:"Toma una acción hoy",xp:50},{text:"Registra tu progreso",xp:20}]).map(m=>({...m,done:false}));
+    // xpTotal = sum of all mission XPs so completing all = 100%
+    const xpTotal=goalMissions.reduce((sum,m)=>sum+m.xp,0);
+    const g={id:Date.now(),title:form.title,desc:form.desc,emoji:form.emoji,target:form.target,unit:form.unit,weeks:form.weeks,xpTotal,xpEarned:0,missions:goalMissions,createdAt:new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long"})};
     setCustomGoals(prev=>[...prev,g]);setShowForm(false);setForm({title:"",desc:"",emoji:"🎯",target:"",unit:"",weeks:"8"});addXP(30);
   }
   function completeMission(gid,mi){
@@ -843,22 +846,47 @@ function MetasScreen({customGoals,setCustomGoals,addXP}){
       <p style={{fontSize:13,color:C.muted,marginBottom:16}}>Conquistas personales convertidas en misiones semanales con XP.</p>
       <button onClick={()=>setShowForm(true)} style={{width:"100%",background:C.green+"14",border:`1.5px dashed ${C.green}50`,borderRadius:14,padding:"15px",color:C.green,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>＋ Crear nueva meta épica</button>
       {customGoals.map(g=>{
+        const doneMis=g.missions.filter(m=>m.done).length;
+        const totalMis=g.missions.length;
         const pct=Math.min(Math.round((g.xpEarned/g.xpTotal)*100),100);
+        const allDone=doneMis===totalMis;
         return(
-          <div key={g.id} style={{background:C.card,border:`1px solid ${pct>=100?C.green+"55":C.border}`,borderRadius:18,padding:"16px",marginBottom:14}}>
+          <div key={g.id} style={{background:C.card,border:`1px solid ${allDone?C.green+"55":C.border}`,borderRadius:18,padding:"16px",marginBottom:14,boxShadow:allDone?`0 0 20px ${C.green}15`:"none",transition:"all 0.4s"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
-              <div><div style={{fontSize:20,marginBottom:4}}>{g.emoji}</div><div style={{fontSize:15,color:C.text,fontWeight:700,marginBottom:2}}>{g.title}</div>{g.target&&<div style={{fontSize:11,color:C.green}}>Meta: {g.target} {g.unit}</div>}</div>
-              <div style={{textAlign:"right"}}><div style={{fontSize:14,color:C.green,fontWeight:800,fontFamily:"'Cinzel',serif"}}>{pct}%</div><div style={{fontSize:10,color:C.muted}}>{g.xpEarned}/{g.xpTotal} XP</div><button onClick={()=>setCustomGoals(prev=>prev.filter(x=>x.id!==g.id))} style={{marginTop:6,background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16}}>🗑</button></div>
+              <div>
+                <div style={{fontSize:20,marginBottom:4}}>{g.emoji}</div>
+                <div style={{fontSize:15,color:C.text,fontWeight:700,marginBottom:2}}>{g.title}</div>
+                {g.target&&<div style={{fontSize:11,color:C.green}}>Meta: {g.target} {g.unit}</div>}
+                <div style={{fontSize:10,color:C.muted,marginTop:2}}>{doneMis}/{totalMis} misiones · {g.weeks} semanas</div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontFamily:"'Cinzel',serif",fontSize:18,color:allDone?C.green:C.text,fontWeight:900,textShadow:allDone?`0 0 10px ${C.green}`:""}}>{pct}%</div>
+                <div style={{fontSize:10,color:C.muted}}>{g.xpEarned}/{g.xpTotal} XP</div>
+                <div style={{display:"flex",gap:6,marginTop:6,justifyContent:"flex-end"}}>
+                  {allDone&&<button onClick={()=>setCustomGoals(prev=>prev.map(x=>x.id!==g.id?x:{...x,missions:x.missions.map(m=>({...m,done:false})),xpEarned:0}))} style={{background:C.green+"18",border:`1px solid ${C.green}33`,borderRadius:6,padding:"3px 8px",color:C.green,cursor:"pointer",fontSize:10,fontFamily:"inherit"}}>↺ Reset</button>}
+                  <button onClick={()=>setCustomGoals(prev=>prev.filter(x=>x.id!==g.id))} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>🗑</button>
+                </div>
+              </div>
             </div>
-            <div style={{height:5,background:C.bg,borderRadius:3,overflow:"hidden",marginBottom:12}}><div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,${C.green}55,${C.green})`,borderRadius:3,boxShadow:`0 0 8px ${C.green}`}}/></div>
-            {pct<100&&g.missions.map((m,i)=>(
-              <div key={i} onClick={()=>completeMission(g.id,i)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:i<g.missions.length-1?`1px solid ${C.bg}`:"none",cursor:m.done?"default":"pointer",opacity:m.done?0.45:1}}>
-                <div style={{width:22,height:22,border:`1.5px solid ${m.done?C.green:C.border}`,borderRadius:6,background:m.done?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#000",fontWeight:800,flexShrink:0,transition:"all 0.3s"}}>{m.done?"✓":""}</div>
-                <span style={{fontSize:12,color:"#94a3b8",flex:1}}>{m.text}</span>
-                <span style={{fontSize:10,color:C.green,fontWeight:700}}>+{m.xp} XP</span>
+            {/* Progress bar */}
+            <div style={{height:6,background:C.bg,borderRadius:3,overflow:"hidden",marginBottom:14,border:`1px solid ${C.border}`}}>
+              <div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,${C.green}66,${C.green})`,borderRadius:3,transition:"width 0.6s",boxShadow:`0 0 8px ${C.green}`}}/>
+            </div>
+            {/* Missions */}
+            {g.missions.map((m,i)=>(
+              <div key={i} onClick={()=>completeMission(g.id,i)} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:i<g.missions.length-1?`1px solid ${C.bg}`:"none",cursor:m.done?"default":"pointer",opacity:m.done?0.45:1,transition:"all 0.3s"}}>
+                <div style={{width:24,height:24,border:`2px solid ${m.done?C.green:C.border}`,borderRadius:7,background:m.done?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#000",fontWeight:800,flexShrink:0,transition:"all 0.3s",boxShadow:m.done?`0 0 8px ${C.green}`:""}}>{m.done?"✓":""}</div>
+                <span style={{fontSize:13,color:m.done?"#64748B":C.text,flex:1,fontWeight:m.done?400:500}}>{m.text}</span>
+                <span style={{fontSize:11,color:C.green,fontWeight:700,flexShrink:0}}>+{m.xp} XP</span>
               </div>
             ))}
-            {pct>=100&&<div style={{textAlign:"center",padding:"10px 0"}}><div style={{fontSize:14,color:C.green,fontFamily:"'Cinzel',serif",letterSpacing:2}}>🏆 ¡META CONQUISTADA!</div></div>}
+            {allDone&&(
+              <div style={{textAlign:"center",padding:"12px 0",borderTop:`1px solid ${C.border}`,marginTop:8}}>
+                <div style={{fontSize:22,marginBottom:4}}>🏆</div>
+                <div style={{fontSize:14,color:C.green,fontFamily:"'Cinzel',serif",letterSpacing:2,textShadow:`0 0 10px ${C.green}`}}>¡META CONQUISTADA!</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:4}}>Puedes resetear para repetirla la próxima semana</div>
+              </div>
+            )}
           </div>
         );
       })}
@@ -1240,10 +1268,10 @@ export default function App(){
             {/* HERO SECTION */}
             <div style={{position:"relative",overflow:"hidden",background:`linear-gradient(180deg,${arc.aura}18 0%,${arc.aura}08 50%,${C.bg} 100%)`,borderBottom:`1px solid ${arc.aura}20`,paddingBottom:0,minHeight:280}}>
               {/* Deep space background dots */}
-              {useMemo(()=>[{x:15,y:18,s:1.4},{x:78,y:8,s:1},{x:92,y:35,s:1.6},{x:6,y:55,s:1.2},{x:88,y:70,s:1},{x:45,y:12,s:0.8},{x:65,y:25,s:1.1}].map((st,i)=>(
-                <div key={i} style={{position:"absolute",left:`${st.x}%`,top:`${st.y}%`,width:st.s*2,height:st.s*2,borderRadius:"50%",background:"#fff",opacity:0.25+i*0.04,animation:`star-drift ${14+i*2}s ${i*1.5}s ease-in-out infinite alternate`,pointerEvents:"none"}}/>
-              )),[]}
-              {/* Nebula glows */}
+              {/* Deep space background dots — static */}
+              {[{x:15,y:18,s:1.4,d:14},{x:78,y:8,s:1,d:16},{x:92,y:35,s:1.6,d:18},{x:6,y:55,s:1.2,d:15},{x:88,y:70,s:1,d:20},{x:45,y:12,s:0.8,d:17},{x:65,y:25,s:1.1,d:13}].map((st,i)=>(
+                <div key={i} style={{position:"absolute",left:`${st.x}%`,top:`${st.y}%`,width:st.s*2,height:st.s*2,borderRadius:"50%",background:"#fff",opacity:0.2+i*0.03,animation:`star-drift ${st.d}s ${i*1.5}s ease-in-out infinite alternate`,pointerEvents:"none"}}/>
+              ))}
               <div style={{position:"absolute",top:-40,left:-40,width:260,height:260,borderRadius:"50%",background:`radial-gradient(circle,${arc.aura}20,transparent 70%)`,pointerEvents:"none"}}/>
               <div style={{position:"absolute",top:30,right:-40,width:200,height:200,borderRadius:"50%",background:`radial-gradient(circle,${C.green}12,transparent 70%)`,pointerEvents:"none"}}/>
               <div style={{position:"absolute",bottom:-20,left:"30%",width:150,height:150,borderRadius:"50%",background:`radial-gradient(circle,${C.purple}08,transparent 70%)`,pointerEvents:"none"}}/>
