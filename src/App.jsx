@@ -816,9 +816,473 @@ function AchievementsScreen({stats,unlockedAchievements}){
     </div>
   );
 }
-function MetasScreen({customGoals,setCustomGoals,addXP}){
-  const [showForm,setShowForm]=useState(false);
-  const [form,setForm]=useState({title:"",desc:"",emoji:"🎯",target:"",unit:"",weeks:"8"});
+function MetasScreen({customGoals,setCustomGoals,addXP,badHabits,setBadHabits}){
+  const [tab,setTab]=useState("metas"); // "metas" | "soltar"
+  const [showGoalForm,setShowGoalForm]=useState(false);
+  const [showHabitForm,setShowHabitForm]=useState(false);
+  const [goalForm,setGoalForm]=useState({title:"",desc:"",emoji:"🎯",target:"",unit:"",weeks:"8"});
+  const [habitForm,setHabitForm]=useState({name:"",trigger:"",reward:"",replacement:"",timesPerWeek:7,targetTimes:0,emoji:"🔗"});
+  const [expandedGoal,setExpandedGoal]=useState(null);
+  const [expandedHabit,setExpandedHabit]=useState(null);
+
+  // ── Goal templates — now with RICH multi-week plans ──────────────
+  const GOAL_TEMPLATES=[
+    {emoji:"⚖️",title:"Bajar 5 kg",desc:"Pérdida de peso saludable y sostenible",target:"5",unit:"kg",weeks:"12",science:"Pérdida gradual de 0.5kg/semana es más sostenible y preserva músculo.",
+     plan:[
+       {week:"Semana 1-2",phase:"Fundación",missions:[{text:"Pésate cada lunes en ayunas",xp:10},{text:"Camina 30 min (4 veces esta semana)",xp:40},{text:"Elimina refrescos y jugos 7 días",xp:35},{text:"Verduras en al menos 2 comidas al día",xp:25},{text:"Duerme 7-8h (el sueño regula el hambre)",xp:20}]},
+       {week:"Semana 3-6",phase:"Progreso",missions:[{text:"Entrena fuerza 2 veces esta semana",xp:45},{text:"Proteína en cada comida (>20g)",xp:30},{text:"Sin comida procesada 5 días",xp:40},{text:"Registra lo que comes 3 días",xp:20},{text:"Camina 10 min después de comer",xp:20}]},
+       {week:"Semana 7-12",phase:"Consolidación",missions:[{text:"Mantén tu peso esta semana (±0.3kg)",xp:50},{text:"Entrena fuerza 3 veces",xp:50},{text:"Prepara tus comidas del día la noche anterior",xp:35},{text:"Sin azúcar añadida toda la semana",xp:45},{text:"Mide tu progreso: fotos + peso + energía",xp:20}]},
+     ]},
+    {emoji:"🏃",title:"Correr 5 km sin parar",desc:"Resistencia cardiovascular desde cero",target:"5",unit:"km",weeks:"10",science:"El método C25K muestra que 8-10 semanas de entrenamiento progresivo permite a sedentarios correr 5km.",
+     plan:[
+       {week:"Semana 1-3",phase:"Base aeróbica",missions:[{text:"Corre 1 min, camina 2 min · 8 repeticiones",xp:30},{text:"Corre 3 días esta semana",xp:35},{text:"Duerme 8h para recuperación muscular",xp:20},{text:"Estira 10 min después de correr",xp:15},{text:"Hidrátate: 2L de agua hoy",xp:10}]},
+       {week:"Semana 4-7",phase:"Resistencia",missions:[{text:"Corre 2 km sin parar hoy",xp:40},{text:"Corre 3 veces esta semana",xp:40},{text:"Añade 500m a tu distancia habitual",xp:35},{text:"Prueba correr 20 min continuos",xp:45},{text:"Recuperación activa: camina 15 min",xp:15}]},
+       {week:"Semana 8-10",phase:"Meta final",missions:[{text:"Corre 4 km sin parar",xp:55},{text:"Carrera larga semanal: tu distancia máxima",xp:50},{text:"¡Corre los 5 km completos!",xp:100},{text:"Celebra y registra tu tiempo",xp:20},{text:"Planifica tu próximo reto",xp:15}]},
+     ]},
+    {emoji:"💪",title:"Ganar músculo",desc:"Fuerza y masa muscular progresiva",target:"3",unit:"kg músculo",weeks:"16",science:"La hipertrofia muscular requiere estímulo progresivo, superávit calórico moderado y sueño adecuado.",
+     plan:[
+       {week:"Semana 1-4",phase:"Adaptación neural",missions:[{text:"Entrena fuerza: pecho + tríceps",xp:45},{text:"Entrena fuerza: espalda + bíceps",xp:45},{text:"Entrena fuerza: piernas + hombros",xp:45},{text:"Proteína en cada comida (>1.6g/kg peso)",xp:30},{text:"Duerme 8h — 80% del músculo crece en sueño",xp:25}]},
+       {week:"Semana 5-12",phase:"Hipertrofia",missions:[{text:"Sube peso en al menos 1 ejercicio esta semana",xp:50},{text:"Completa todas las series de tu entrenamiento",xp:40},{text:"Come superávit calórico moderado (+200-300 kcal)",xp:20},{text:"Suplemento: creatina 5g/día si aplica",xp:10},{text:"Foto de progreso mensual",xp:15}]},
+       {week:"Semana 13-16",phase:"Fuerza máxima",missions:[{text:"Alcanza tu récord personal en sentadilla",xp:60},{text:"Alcanza tu récord personal en press banca",xp:60},{text:"Evalúa ganancia de masa (medidas + peso)",xp:25},{text:"Diseña tu plan para las próximas 16 semanas",xp:20}]},
+     ]},
+    {emoji:"😴",title:"Mejorar el sueño",desc:"Rutina de sueño profundo y reparador",target:"8",unit:"h/noche",weeks:"6",science:"La higiene del sueño mejora el 60% de los casos de insomnio leve sin medicación en 4-6 semanas.",
+     plan:[
+       {week:"Semana 1-2",phase:"Diagnóstico",missions:[{text:"Anota tu hora de dormir y despertar 7 días",xp:20},{text:"Sin pantallas 1h antes de dormir",xp:30},{text:"Cuarto completamente oscuro",xp:20},{text:"Temperatura de habitación: 18-20°C",xp:15},{text:"Sin cafeína después de las 2pm",xp:25}]},
+       {week:"Semana 3-4",phase:"Rutina",missions:[{text:"Duerme y despierta a la misma hora 5 días",xp:40},{text:"Rutina de relajación de 15 min antes de dormir",xp:25},{text:"Sin alcohol esta semana",xp:30},{text:"Ejercicio matutino (mejora el sueño nocturno)",xp:25},{text:"Registra calidad del sueño del 1-10",xp:10}]},
+       {week:"Semana 5-6",phase:"Optimización",missions:[{text:"7 días consecutivos con 7+ horas de sueño",xp:60},{text:"Sin alarma — despierta naturalmente",xp:35},{text:"Evalúa: energía, humor y foco vs semana 1",xp:20},{text:"Comparte tu rutina de sueño con alguien",xp:10}]},
+     ]},
+    {emoji:"📚",title:"Leer 12 libros",desc:"Un libro por mes durante un año",target:"12",unit:"libros",weeks:"52",science:"15 páginas diarias = 18 libros al año. La lectura regular reduce el estrés un 68% (Universidad de Sussex).",
+     plan:[
+       {week:"Mes 1-3",phase:"Hábito base",missions:[{text:"Lee 20 páginas hoy (sin excusas)",xp:20},{text:"Leer antes de dormir en vez de pantalla",xp:25},{text:"Termina el capítulo actual antes de cerrar",xp:15},{text:"Anota 3 ideas del libro que termines",xp:20},{text:"Comparte una cita que te impactó",xp:10}]},
+       {week:"Mes 4-8",phase:"Variedad",missions:[{text:"Lee un género que no hayas probado",xp:30},{text:"Termina tu libro actual esta semana",xp:40},{text:"Lleva el libro contigo todo el día",xp:10},{text:"Lee 30 min en un lugar diferente",xp:15},{text:"Recomienda un libro a alguien",xp:15}]},
+       {week:"Mes 9-12",phase:"Meta cumplida",missions:[{text:"Libro 10 — ¡estás a 2 de tu meta!",xp:50},{text:"Escribe tu reseña del mejor libro del año",xp:30},{text:"¡Libro 12! Celebra y comparte tu lista",xp:80},{text:"Define los 12 libros del próximo año",xp:20}]},
+     ]},
+    {emoji:"🧘",title:"Meditar 30 días seguidos",desc:"Hábito de meditación diaria",target:"30",unit:"días",weeks:"5",science:"8 semanas de meditación reducen el volumen de la amígdala (centro del estrés) en promedio 10-15%.",
+     plan:[
+       {week:"Semana 1",phase:"Inicio",missions:[{text:"Medita 5 min hoy (solo empieza)",xp:20},{text:"3 días seguidos de meditación",xp:30},{text:"Encuentra tu lugar y hora fija",xp:15},{text:"Prueba una app guiada (Headspace, Calm)",xp:10},{text:"Medita antes de revisar el celular mañana",xp:25}]},
+       {week:"Semana 2-3",phase:"Constancia",missions:[{text:"7 días seguidos — ¡1 semana completa!",xp:50},{text:"Sube a 10 min de meditación",xp:30},{text:"Meditación sin guía: solo respira",xp:25},{text:"14 días seguidos — mitad del camino",xp:60},{text:"Nota 3 cambios en tu nivel de estrés",xp:20}]},
+       {week:"Semana 4-5",phase:"Meta",missions:[{text:"21 días — el hábito ya está formado",xp:70},{text:"Meditación de 20 min sin distracción",xp:40},{text:"30 días COMPLETOS — ¡Leyenda!",xp:100},{text:"Escribe cómo cambió tu mente en 30 días",xp:25}]},
+     ]},
+  ];
+
+  // ── Bad habits catalog ─────────────────────────────────────────
+  const HABIT_TEMPLATES=[
+    {emoji:"📱",name:"Scrollear redes sociales al despertar",trigger:"Alarma del celular · Primeros 5 min del día",reward:"Estimulación inmediata, evitar pensar",replacement:"Leer 2 páginas de un libro o respirar 2 min"},
+    {emoji:"🍬",name:"Comer dulces cuando estoy estresado",trigger:"Estrés laboral o emocional intenso",reward:"Dopamina rápida, sensación de calma",replacement:"Caminar 5 min o beber agua con limón"},
+    {emoji:"🌙",name:"Dormir tarde sin razón real",trigger:"Inercia nocturna: 'un episodio más'",reward:"Tiempo propio, escapar del día",replacement:"Rutina de cierre: leer o journaling 15 min"},
+    {emoji:"🚬",name:"Fumar cuando hay ansiedad",trigger:"Tensión, reuniones difíciles, café",reward:"Reducción temporal de ansiedad",replacement:"Respiración 4-7-8: inhala 4s, sostén 7s, exhala 8s"},
+    {emoji:"🍟",name:"Comer comida rápida por comodidad",trigger:"Cansancio al llegar a casa, no planificar",reward:"Comodidad inmediata sin esfuerzo",replacement:"Meal prep dominical: 30 min preparando la semana"},
+    {emoji:"💬",name:"Quejarme constantemente",trigger:"Fricción menor, planes que cambian",reward:"Validación social, desahogo momentáneo",replacement:"Reencuadre: '¿qué puedo controlar aquí?'"},
+    {emoji:"🛋️",name:"Procrastinar el ejercicio",trigger:"Cansancio percibido, 'mañana lo hago'",reward:"Alivio inmediato de la incomodidad",replacement:"Regla de los 2 minutos: ponte la ropa de ejercicio"},
+    {emoji:"🥂",name:"Beber alcohol para relajarme",trigger:"Fin de jornada, tensión acumulada",reward:"Relajación, separación del trabajo",replacement:"Ducha caliente + té + 10 min de stretching"},
+  ];
+
+  function createGoal(){
+    if(!goalForm.title)return;
+    const tmpl=GOAL_TEMPLATES.find(t=>t.title===goalForm.title);
+    // Flatten all plan missions into one list
+    const allMissions=tmpl
+      ? tmpl.plan.flatMap(phase=>phase.missions.map(m=>({...m,done:false,phase:phase.phase,week:phase.week})))
+      : [{text:"Define tu primer paso concreto",xp:20,done:false},{text:"Toma la primera acción hoy",xp:40,done:false},{text:"Comparte tu meta con alguien",xp:20,done:false},{text:"Registra tu punto de partida",xp:20,done:false}];
+    const xpTotal=allMissions.reduce((s,m)=>s+m.xp,0);
+    const g={id:Date.now(),title:goalForm.title,desc:goalForm.desc||tmpl?.desc||"",emoji:goalForm.emoji,target:goalForm.target,unit:goalForm.unit,weeks:goalForm.weeks,science:tmpl?.science||"",plan:tmpl?.plan||null,xpTotal,xpEarned:0,missions:allMissions,createdAt:new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long"})};
+    setCustomGoals(prev=>[...prev,g]);setShowGoalForm(false);setGoalForm({title:"",desc:"",emoji:"🎯",target:"",unit:"",weeks:"8"});addXP(30);
+  }
+
+  function completeGoalMission(gid,mi){
+    const g=customGoals.find(g=>g.id===gid);if(!g||g.missions[mi].done)return;
+    const xp=g.missions[mi].xp;
+    setCustomGoals(prev=>prev.map(g=>g.id!==gid?g:{...g,missions:g.missions.map((m,i)=>i===mi?{...m,done:true}:m),xpEarned:(g.xpEarned||0)+xp}));addXP(xp);
+  }
+
+  function createHabit(){
+    if(!habitForm.name)return;
+    const h={id:Date.now(),name:habitForm.name,trigger:habitForm.trigger,reward:habitForm.reward,replacement:habitForm.replacement,emoji:habitForm.emoji,timesPerWeek:parseInt(habitForm.timesPerWeek),targetTimes:parseInt(habitForm.targetTimes),currentWeekCount:0,daysClean:0,streak:0,totalXP:0,weekHistory:[],createdAt:new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long"})};
+    setBadHabits(prev=>[...prev,h]);setShowHabitForm(false);setHabitForm({name:"",trigger:"",reward:"",replacement:"",timesPerWeek:7,targetTimes:0,emoji:"🔗"});addXP(25);
+  }
+
+  function logHabitAvoid(hid){
+    // User successfully avoided the habit today → +XP + streak
+    setBadHabits(prev=>prev.map(h=>{
+      if(h.id!==hid)return h;
+      const xpGain=50+h.streak*5; // more XP the longer the streak
+      addXP(xpGain);
+      return{...h,daysClean:h.daysClean+1,streak:h.streak+1,totalXP:h.totalXP+xpGain};
+    }));
+  }
+
+  function logHabitFell(hid){
+    // User fell into the habit — reset streak but keep progress
+    setBadHabits(prev=>prev.map(h=>{
+      if(h.id!==hid)return h;
+      const xpGain=15; // small XP for honesty
+      addXP(xpGain);
+      return{...h,streak:0,currentWeekCount:h.currentWeekCount+1,totalXP:h.totalXP+xpGain};
+    }));
+  }
+
+  // Ian messages for bad habits
+  const IAN_HABIT_MSGS={
+    avoided:(name,streak)=>[
+      `¡${streak} días sin "${name}"! Cada vez que dices no, reprogramas tu cerebro. Eso es poder real.`,
+      `Lo evitaste hoy. Mis sensores muestran: tu corteza prefrontal está ganando. Sigue así.`,
+      `${streak} días de racha. No fue fácil. Eso es exactamente lo que lo hace valioso.`,
+    ][streak%3],
+    fell:(name)=>`Caíste en "${name}" hoy. Eso está bien. El streak se reinicia, pero el aprendizaje no. ¿Qué lo disparó?`,
+    milestone:(days)=>`¡${days} días! Esto ya no es fuerza de voluntad. Es identidad. Eres alguien que no hace eso.`,
+  };
+
+  const totalBadXP=badHabits.reduce((s,h)=>s+h.totalXP,0);
+
+  return(
+    <div style={{maxWidth:660,margin:"0 auto",padding:"0 0 80px"}}>
+      {/* ── Tab switcher ── */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",background:C.card,borderBottom:`1px solid ${C.border}`,position:"sticky",top:52,zIndex:20}}>
+        {[["metas","🎯 Mis Metas",C.green],["soltar","🔗 Hábitos a Soltar",C.orange]].map(([v,label,color])=>(
+          <button key={v} onClick={()=>setTab(v)} style={{padding:"14px 8px",border:"none",background:"transparent",color:tab===v?color:C.muted,fontSize:13,fontWeight:tab===v?700:400,cursor:"pointer",fontFamily:"inherit",borderBottom:`2.5px solid ${tab===v?color:"transparent"}`,transition:"all 0.2s"}}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ════════════════════════════════════════
+          TAB 1 — MIS METAS POSITIVAS
+      ════════════════════════════════════════ */}
+      {tab==="metas"&&(
+        <div style={{padding:"16px 14px"}}>
+          <p style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>Conquistas épicas con planes detallados semana por semana. Cada misión te acerca a quien quieres ser.</p>
+
+          <button onClick={()=>setShowGoalForm(true)} style={{width:"100%",background:C.green+"12",border:`1.5px dashed ${C.green}44`,borderRadius:14,padding:"14px",color:C.green,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,marginBottom:20,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            ＋ Nueva meta épica
+          </button>
+
+          {/* Active goals */}
+          {customGoals.map(g=>{
+            const doneMis=g.missions.filter(m=>m.done).length;
+            const pct=Math.min(Math.round((g.xpEarned/g.xpTotal)*100),100);
+            const allDone=doneMis===g.missions.length;
+            const isOpen=expandedGoal===g.id;
+            // Group missions by phase if plan exists
+            const phases=g.plan?g.plan.map(ph=>({...ph,missions:g.missions.filter(m=>m.phase===ph.phase)})):null;
+            return(
+              <div key={g.id} style={{background:C.card,border:`1px solid ${allDone?C.green+"55":C.border}`,borderRadius:18,padding:"0",marginBottom:16,overflow:"hidden",boxShadow:allDone?`0 0 20px ${C.green}12`:"none",transition:"all 0.4s"}}>
+                {/* Header — always visible */}
+                <div style={{padding:"16px 16px 12px",cursor:"pointer"}} onClick={()=>setExpandedGoal(isOpen?null:g.id)}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{fontSize:28}}>{g.emoji}</div>
+                      <div>
+                        <div style={{fontSize:15,color:C.text,fontWeight:700}}>{g.title}</div>
+                        {g.desc&&<div style={{fontSize:11,color:C.muted,marginTop:1}}>{g.desc}</div>}
+                        <div style={{fontSize:10,color:C.muted,marginTop:2}}>{doneMis}/{g.missions.length} misiones · {g.weeks} sem · {g.createdAt}</div>
+                      </div>
+                    </div>
+                    <div style={{textAlign:"right",flexShrink:0,marginLeft:8}}>
+                      <div style={{fontFamily:"'Cinzel',serif",fontSize:20,color:allDone?C.green:C.text,fontWeight:900,textShadow:allDone?`0 0 10px ${C.green}`:""}}>{pct}%</div>
+                      <div style={{fontSize:9,color:C.muted}}>{g.xpEarned}/{g.xpTotal} XP</div>
+                    </div>
+                  </div>
+                  {/* Progress bar */}
+                  <div style={{height:6,background:C.bg,borderRadius:3,overflow:"hidden",border:`1px solid ${C.border}`}}>
+                    <div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,${C.green}66,${C.green})`,borderRadius:3,transition:"width 0.6s",boxShadow:`0 0 8px ${C.green}`}}/>
+                  </div>
+                  {/* Expand hint */}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
+                    <span style={{fontSize:10,color:C.muted}}>{isOpen?"Toca para cerrar":"Toca para ver el plan completo"}</span>
+                    <span style={{fontSize:14,color:C.muted,transition:"transform 0.3s",display:"inline-block",transform:isOpen?"rotate(180deg)":"rotate(0deg)"}}>⌄</span>
+                  </div>
+                </div>
+
+                {/* Expanded: phases + science */}
+                {isOpen&&(
+                  <div style={{borderTop:`1px solid ${C.border}`,padding:"0 16px 16px"}}>
+                    {/* Science basis */}
+                    {g.science&&(
+                      <div style={{background:C.green+"0c",border:`1px solid ${C.green}22`,borderRadius:10,padding:"10px 12px",margin:"12px 0",display:"flex",gap:8}}>
+                        <span style={{fontSize:14,flexShrink:0}}>🧬</span>
+                        <p style={{fontSize:11,color:C.muted,lineHeight:1.65,margin:0}}>{g.science}</p>
+                      </div>
+                    )}
+                    {/* Missions by phase or flat */}
+                    {phases?(
+                      phases.map((ph,pi)=>{
+                        const phaseDone=ph.missions.filter(m=>m.done).length;
+                        const phaseTotal=ph.missions.length;
+                        const phaseComplete=phaseDone===phaseTotal;
+                        return(
+                          <div key={pi} style={{marginBottom:16}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,marginTop:12}}>
+                              <div style={{width:6,height:6,borderRadius:"50%",background:phaseComplete?C.green:C.border,boxShadow:phaseComplete?`0 0 6px ${C.green}`:"none"}}/>
+                              <span style={{fontSize:10,color:phaseComplete?C.green:C.muted,letterSpacing:2,fontWeight:700}}>{ph.week?.toUpperCase()} · {ph.phase?.toUpperCase()}</span>
+                              <span style={{fontSize:9,color:C.muted,marginLeft:"auto"}}>{phaseDone}/{phaseTotal}</span>
+                            </div>
+                            {ph.missions.map((m,mi)=>{
+                              const globalIdx=g.missions.findIndex(gm=>gm.text===m.text&&gm.phase===m.phase);
+                              return(
+                                <div key={mi} onClick={()=>completeGoalMission(g.id,globalIdx)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:mi<ph.missions.length-1?`1px solid ${C.bg}`:"none",cursor:m.done?"default":"pointer",opacity:m.done?0.4:1,transition:"all 0.3s"}}>
+                                  <div style={{width:22,height:22,border:`2px solid ${m.done?C.green:C.border}`,borderRadius:7,background:m.done?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#000",fontWeight:800,flexShrink:0,transition:"all 0.3s",boxShadow:m.done?`0 0 7px ${C.green}`:""}}>{m.done?"✓":""}</div>
+                                  <span style={{fontSize:12,color:m.done?"#64748B":C.text,flex:1,fontWeight:m.done?400:500}}>{m.text}</span>
+                                  <span style={{fontSize:10,color:C.green,fontWeight:700,flexShrink:0}}>+{m.xp}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })
+                    ):(
+                      g.missions.map((m,i)=>(
+                        <div key={i} onClick={()=>completeGoalMission(g.id,i)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:i<g.missions.length-1?`1px solid ${C.bg}`:"none",cursor:m.done?"default":"pointer",opacity:m.done?0.4:1,transition:"all 0.3s"}}>
+                          <div style={{width:22,height:22,border:`2px solid ${m.done?C.green:C.border}`,borderRadius:7,background:m.done?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#000",fontWeight:800,flexShrink:0,transition:"all 0.3s"}}>{m.done?"✓":""}</div>
+                          <span style={{fontSize:12,color:m.done?"#64748B":C.text,flex:1}}>{m.text}</span>
+                          <span style={{fontSize:10,color:C.green,fontWeight:700}}>+{m.xp}</span>
+                        </div>
+                      ))
+                    )}
+                    {/* Actions */}
+                    <div style={{display:"flex",gap:8,marginTop:14}}>
+                      {allDone&&<button onClick={()=>setCustomGoals(prev=>prev.map(x=>x.id!==g.id?x:{...x,missions:x.missions.map(m=>({...m,done:false})),xpEarned:0}))} style={{flex:1,background:C.green+"14",border:`1px solid ${C.green}33`,borderRadius:10,padding:"9px",color:C.green,cursor:"pointer",fontSize:12,fontFamily:"inherit",fontWeight:600}}>↺ Repetir meta</button>}
+                      <button onClick={()=>setCustomGoals(prev=>prev.filter(x=>x.id!==g.id))} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:10,padding:"9px 14px",color:C.muted,cursor:"pointer",fontSize:12,fontFamily:"inherit"}}>Eliminar</button>
+                    </div>
+                    {allDone&&(
+                      <div style={{textAlign:"center",padding:"14px 0 4px",marginTop:8,borderTop:`1px solid ${C.border}`}}>
+                        <div style={{fontSize:26,marginBottom:4}}>🏆</div>
+                        <div style={{fontSize:14,color:C.green,fontFamily:"'Cinzel',serif",letterSpacing:2,textShadow:`0 0 10px ${C.green}`}}>¡META CONQUISTADA!</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Template grid when empty */}
+          {customGoals.length===0&&(
+            <div>
+              <div style={{fontSize:9,color:C.muted,letterSpacing:3,marginBottom:12}}>PLANES ÉPICOS DISPONIBLES</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                {GOAL_TEMPLATES.map((t,i)=>(
+                  <div key={i} onClick={()=>{setGoalForm({title:t.title,desc:t.desc,emoji:t.emoji,target:t.target,unit:t.unit,weeks:t.weeks});setShowGoalForm(true);}} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",cursor:"pointer",transition:"all 0.2s"}}>
+                    <div style={{fontSize:26,marginBottom:6}}>{t.emoji}</div>
+                    <div style={{fontSize:13,color:C.text,fontWeight:600,marginBottom:3}}>{t.title}</div>
+                    <div style={{fontSize:10,color:C.muted,marginBottom:6}}>{t.weeks} semanas</div>
+                    <div style={{fontSize:9,color:C.green}}>{t.plan.reduce((s,ph)=>s+ph.missions.length,0)} misiones · {t.plan.length} fases</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════
+          TAB 2 — HÁBITOS A SOLTAR
+      ════════════════════════════════════════ */}
+      {tab==="soltar"&&(
+        <div style={{padding:"16px 14px"}}>
+          {/* Ian message for this section */}
+          <div style={{background:`linear-gradient(135deg,${C.orange}12,${C.orange}06)`,border:`1px solid ${C.orange}33`,borderRadius:14,padding:"14px 16px",marginBottom:18,display:"flex",gap:12,alignItems:"flex-start"}}>
+            <span style={{fontSize:22,flexShrink:0}}>🤖</span>
+            <div>
+              <div style={{fontSize:9,color:C.orange,letterSpacing:2,marginBottom:4,fontWeight:700}}>IAN DICE</div>
+              <p style={{fontSize:13,color:C.text,lineHeight:1.65,margin:0}}>
+                {badHabits.length===0
+                  ? `Identificar lo que te frena es tan poderoso como construir lo nuevo. Añade tu primer hábito a soltar. Yo te acompaño.`
+                  : badHabits[0]?.streak>0
+                    ? `Llevas ${badHabits[0].streak} días seguidos resistiendo. Cada vez que dices no, ese camino neuronal se debilita. Sigue.`
+                    : `El hábito de reemplazo es la clave. No es fuerza de voluntad. Es darle al cerebro lo mismo que busca, de forma diferente.`
+                }
+              </p>
+              {totalBadXP>0&&<div style={{fontSize:10,color:C.orange,marginTop:6}}>+{totalBadXP} XP ganados resistiendo</div>}
+            </div>
+          </div>
+
+          {/* Science note */}
+          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:16}}>
+            <div style={{fontSize:9,color:C.muted,letterSpacing:2,marginBottom:6}}>🧬 BASE CIENTÍFICA</div>
+            <p style={{fontSize:11,color:C.muted,lineHeight:1.7,margin:0}}>El <strong style={{color:C.text}}>Habit Loop</strong> (Duhigg, Clear): todo hábito tiene un <em>disparador → rutina → recompensa</em>. Para romperlo, mantén el mismo disparador y recompensa, pero cambia la rutina. El cerebro no puede eliminar hábitos, solo reemplazarlos.</p>
+          </div>
+
+          <button onClick={()=>setShowHabitForm(true)} style={{width:"100%",background:C.orange+"12",border:`1.5px dashed ${C.orange}44`,borderRadius:14,padding:"14px",color:C.orange,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,marginBottom:20,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            ＋ Añadir hábito a soltar
+          </button>
+
+          {/* Bad habit cards */}
+          {badHabits.map(h=>{
+            const weeklyProgress=h.targetTimes===0
+              ? Math.max(0,h.timesPerWeek-h.currentWeekCount)
+              : h.currentWeekCount;
+            const successPct=h.targetTimes===0
+              ? Math.min(100,Math.round((h.daysClean/(h.daysClean+h.currentWeekCount||1))*100))
+              : Math.min(100,Math.round(((h.timesPerWeek-h.currentWeekCount)/h.timesPerWeek)*100));
+            const isOpen=expandedHabit===h.id;
+            return(
+              <div key={h.id} style={{background:C.card,border:`1px solid ${h.streak>=3?C.orange+"44":C.border}`,borderRadius:18,marginBottom:14,overflow:"hidden",boxShadow:h.streak>=3?`0 0 16px ${C.orange}14`:"none",transition:"all 0.4s"}}>
+                {/* Card header */}
+                <div style={{padding:"16px 16px 12px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{fontSize:26}}>{h.emoji}</div>
+                      <div>
+                        <div style={{fontSize:14,color:C.text,fontWeight:700}}>{h.name}</div>
+                        <div style={{fontSize:10,color:C.muted,marginTop:2}}>Desde {h.createdAt}</div>
+                      </div>
+                    </div>
+                    {/* Streak badge */}
+                    <div style={{textAlign:"right",flexShrink:0,marginLeft:8}}>
+                      <div style={{fontFamily:"'Cinzel',serif",fontSize:18,color:C.orange,fontWeight:900}}>{h.streak}🔥</div>
+                      <div style={{fontSize:9,color:C.muted}}>días seguidos</div>
+                    </div>
+                  </div>
+                  {/* Progress bar — clean days */}
+                  <div style={{marginBottom:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:10,color:C.muted}}>Resistencia acumulada</span>
+                      <span style={{fontSize:10,color:C.orange,fontWeight:700}}>{h.daysClean} días sin caer</span>
+                    </div>
+                    <div style={{height:6,background:C.bg,borderRadius:3,overflow:"hidden",border:`1px solid ${C.border}`}}>
+                      <div style={{height:"100%",width:`${Math.min((h.daysClean/30)*100,100)}%`,background:`linear-gradient(90deg,${C.orange}66,${C.orange})`,borderRadius:3,transition:"width 0.6s",boxShadow:`0 0 8px ${C.orange}`}}/>
+                    </div>
+                    <div style={{fontSize:9,color:C.muted,marginTop:2}}>Meta: 30 días limpios</div>
+                  </div>
+                  {/* Action buttons */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                    <button onClick={()=>logHabitAvoid(h.id)} style={{background:`linear-gradient(135deg,${C.green},${C.green}cc)`,border:"none",borderRadius:10,padding:"11px",color:"#000",cursor:"pointer",fontFamily:"'Cinzel',serif",fontWeight:700,fontSize:12,boxShadow:`0 0 12px ${C.green}44`}}>
+                      ✓ Lo resistí hoy +{50+h.streak*5} XP
+                    </button>
+                    <button onClick={()=>logHabitFell(h.id)} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:10,padding:"11px",color:C.muted,cursor:"pointer",fontSize:12,fontFamily:"inherit"}}>
+                      Caí hoy (+15 XP honestidad)
+                    </button>
+                  </div>
+                </div>
+                {/* Expand button */}
+                <div onClick={()=>setExpandedHabit(isOpen?null:h.id)} style={{padding:"8px 16px",borderTop:`1px solid ${C.bg}`,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontSize:10,color:C.muted}}>{isOpen?"Cerrar detalles":"Ver disparador y reemplazo"}</span>
+                  <span style={{fontSize:12,color:C.muted,transition:"transform 0.3s",display:"inline-block",transform:isOpen?"rotate(180deg)":"rotate(0deg)"}}>⌄</span>
+                </div>
+                {/* Expanded details */}
+                {isOpen&&(
+                  <div style={{borderTop:`1px solid ${C.border}`,padding:"14px 16px"}}>
+                    {[
+                      {label:"⚡ DISPARADOR",value:h.trigger,color:C.orange},
+                      {label:"🎯 RECOMPENSA QUE BUSCA",value:h.reward,color:C.purple},
+                      {label:"✅ HÁBITO DE REEMPLAZO",value:h.replacement,color:C.green},
+                    ].map(({label,value,color})=>value?(
+                      <div key={label} style={{marginBottom:12}}>
+                        <div style={{fontSize:9,color:color,letterSpacing:2,marginBottom:4,fontWeight:700}}>{label}</div>
+                        <div style={{fontSize:13,color:C.text,background:color+"0a",borderRadius:8,padding:"8px 12px",border:`1px solid ${color}22`}}>{value}</div>
+                      </div>
+                    ):null)}
+                    {/* Milestones */}
+                    <div style={{marginTop:4}}>
+                      <div style={{fontSize:9,color:C.muted,letterSpacing:2,marginBottom:8}}>HITOS</div>
+                      <div style={{display:"flex",gap:6}}>
+                        {[7,14,30].map(d=>(
+                          <div key={d} style={{flex:1,background:h.daysClean>=d?C.orange+"18":C.bg,border:`1px solid ${h.daysClean>=d?C.orange+"55":C.border}`,borderRadius:10,padding:"8px 4px",textAlign:"center",transition:"all 0.3s"}}>
+                            <div style={{fontSize:16,marginBottom:2}}>{h.daysClean>=d?"🔥":"🔒"}</div>
+                            <div style={{fontSize:9,color:h.daysClean>=d?C.orange:C.muted,fontWeight:h.daysClean>=d?700:400}}>{d} días</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Ian reaction */}
+                    {h.streak>0&&(
+                      <div style={{marginTop:12,background:C.orange+"08",border:`1px solid ${C.orange}22`,borderRadius:10,padding:"10px 12px"}}>
+                        <div style={{fontSize:9,color:C.orange,letterSpacing:2,marginBottom:4}}>🤖 IAN DICE</div>
+                        <p style={{fontSize:12,color:C.text,margin:0,lineHeight:1.6,fontStyle:"italic"}}>{IAN_HABIT_MSGS.avoided(h.name,h.streak)}</p>
+                      </div>
+                    )}
+                    <button onClick={()=>setBadHabits(prev=>prev.filter(x=>x.id!==h.id))} style={{marginTop:12,background:"none",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 14px",color:C.muted,cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>Eliminar hábito</button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Empty state with examples */}
+          {badHabits.length===0&&(
+            <div>
+              <div style={{fontSize:9,color:C.muted,letterSpacing:3,marginBottom:12}}>EJEMPLOS COMUNES — toca para añadir</div>
+              {HABIT_TEMPLATES.map((t,i)=>(
+                <div key={i} onClick={()=>{setHabitForm({name:t.name,trigger:t.trigger,reward:t.reward,replacement:t.replacement,emoji:t.emoji,timesPerWeek:7,targetTimes:0});setShowHabitForm(true);}} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"13px 14px",marginBottom:10,cursor:"pointer",display:"flex",alignItems:"center",gap:12,transition:"all 0.2s"}}>
+                  <span style={{fontSize:22,flexShrink:0}}>{t.emoji}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,color:C.text,fontWeight:600,marginBottom:2}}>{t.name}</div>
+                    <div style={{fontSize:10,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>→ {t.replacement}</div>
+                  </div>
+                  <span style={{fontSize:12,color:C.muted,flexShrink:0}}>+</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Goal Form Modal ── */}
+      {showGoalForm&&(
+        <div style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:970,backdropFilter:"blur(4px)"}}>
+          <div style={{background:C.card,borderRadius:"20px 20px 0 0",padding:"24px 20px 48px",width:"100%",maxWidth:520,animation:"slide-up 0.35s ease",maxHeight:"92vh",overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+              <h3 style={{fontFamily:"'Cinzel',serif",fontSize:16,color:C.text}}>Nueva Meta Épica</h3>
+              <button onClick={()=>setShowGoalForm(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:22}}>✕</button>
+            </div>
+            <div style={{marginBottom:12}}>
+              <label style={FS.label}>EMOJI</label>
+              <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>{["🎯","⚖️","🏃","💪","😴","📚","🧘","🏊","🚴","✈️","💰","🎸","🥗","🧠","🎓","🏆","🌍","💡"].map(e=><button key={e} onClick={()=>setGoalForm(f=>({...f,emoji:e}))} style={{width:34,height:34,fontSize:16,border:`1.5px solid ${goalForm.emoji===e?C.green:C.border}`,borderRadius:8,background:goalForm.emoji===e?C.green+"18":"transparent",cursor:"pointer"}}>{e}</button>)}</div>
+            </div>
+            <div style={{marginBottom:12}}><label style={FS.label}>¿CUÁL ES TU META?</label><input style={FS.input} placeholder="ej. Correr 5 km sin parar" value={goalForm.title} onChange={e=>setGoalForm(f=>({...f,title:e.target.value}))}/></div>
+            <div style={{marginBottom:12}}><label style={FS.label}>DESCRIPCIÓN (opcional)</label><input style={FS.input} placeholder="¿Por qué es importante para ti?" value={goalForm.desc} onChange={e=>setGoalForm(f=>({...f,desc:e.target.value}))}/></div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+              <div><label style={FS.label}>META NUMÉRICA</label><input style={FS.input} placeholder="ej. 5" value={goalForm.target} onChange={e=>setGoalForm(f=>({...f,target:e.target.value}))}/></div>
+              <div><label style={FS.label}>UNIDAD</label><input style={FS.input} placeholder="ej. kg, km, días" value={goalForm.unit} onChange={e=>setGoalForm(f=>({...f,unit:e.target.value}))}/></div>
+            </div>
+            <div style={{marginBottom:20}}><label style={FS.label}>DURACIÓN: <span style={{color:C.green,fontWeight:700}}>{goalForm.weeks} semanas</span></label><input type="range" min="2" max="52" value={goalForm.weeks} onChange={e=>setGoalForm(f=>({...f,weeks:e.target.value}))} style={{width:"100%",accentColor:C.green}}/></div>
+            {/* Template quick-pick */}
+            <div style={{marginBottom:16}}>
+              <label style={FS.label}>O ELIGE UN PLAN ÉPICO LISTO</label>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>{GOAL_TEMPLATES.map(t=><button key={t.title} onClick={()=>setGoalForm({title:t.title,desc:t.desc,emoji:t.emoji,target:t.target,unit:t.unit,weeks:t.weeks})} style={{border:`1px solid ${goalForm.title===t.title?C.green+"66":C.border}`,borderRadius:8,padding:"5px 10px",background:goalForm.title===t.title?C.green+"14":"transparent",color:goalForm.title===t.title?C.green:C.muted,cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>{t.emoji} {t.title}</button>)}</div>
+            </div>
+            <button onClick={createGoal} style={{width:"100%",background:goalForm.title?C.green:"#334155",border:"none",borderRadius:12,padding:"14px",color:goalForm.title?"#000":C.muted,fontFamily:"'Cinzel',serif",fontWeight:800,fontSize:13,cursor:goalForm.title?"pointer":"default",boxShadow:goalForm.title?`0 0 20px ${C.green}44`:"none",transition:"all 0.3s"}}>⚡ Crear meta (+30 XP)</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Bad Habit Form Modal ── */}
+      {showHabitForm&&(
+        <div style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:970,backdropFilter:"blur(4px)"}}>
+          <div style={{background:C.card,borderRadius:"20px 20px 0 0",padding:"24px 20px 48px",width:"100%",maxWidth:520,animation:"slide-up 0.35s ease",maxHeight:"92vh",overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <h3 style={{fontFamily:"'Cinzel',serif",fontSize:16,color:C.text}}>Hábito a Soltar</h3>
+              <button onClick={()=>setShowHabitForm(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:22}}>✕</button>
+            </div>
+            <p style={{fontSize:11,color:C.muted,marginBottom:18,lineHeight:1.6}}>Identificar el disparador y el hábito de reemplazo es lo más importante. El resto viene solo.</p>
+            <div style={{marginBottom:12}}>
+              <label style={FS.label}>EMOJI</label>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{["📱","🍬","🌙","🚬","🍟","💬","🛋️","🥂","🎮","☕","🧁","😤","🤳","🛒"].map(e=><button key={e} onClick={()=>setHabitForm(f=>({...f,emoji:e}))} style={{width:34,height:34,fontSize:16,border:`1.5px solid ${habitForm.emoji===e?C.orange:C.border}`,borderRadius:8,background:habitForm.emoji===e?C.orange+"18":"transparent",cursor:"pointer"}}>{e}</button>)}</div>
+            </div>
+            <div style={{marginBottom:12}}><label style={FS.label}>¿CUÁL ES EL HÁBITO? <span style={{color:C.orange}}>*</span></label><input style={FS.input} placeholder="ej. Scrollear redes al despertar" value={habitForm.name} onChange={e=>setHabitForm(f=>({...f,name:e.target.value}))}/></div>
+            <div style={{marginBottom:12}}><label style={FS.label}>⚡ DISPARADOR — ¿Qué lo activa?</label><input style={FS.input} placeholder="ej. Cuando suena la alarma del celular" value={habitForm.trigger} onChange={e=>setHabitForm(f=>({...f,trigger:e.target.value}))}/></div>
+            <div style={{marginBottom:12}}><label style={FS.label}>🎯 RECOMPENSA QUE BUSCAS — ¿Qué te da?</label><input style={FS.input} placeholder="ej. Estimulación inmediata, evitar pensar" value={habitForm.reward} onChange={e=>setHabitForm(f=>({...f,reward:e.target.value}))}/></div>
+            <div style={{marginBottom:16}}><label style={FS.label}>✅ HÁBITO DE REEMPLAZO — Misma recompensa, diferente acción</label><input style={FS.input} placeholder="ej. Leer 2 páginas o respirar 2 min" value={habitForm.replacement} onChange={e=>setHabitForm(f=>({...f,replacement:e.target.value}))}/></div>
+            <div style={{marginBottom:20}}>
+              <label style={FS.label}>¿CUÁNTAS VECES POR SEMANA LO HACES AHORA?</label>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <input type="range" min="1" max="21" value={habitForm.timesPerWeek} onChange={e=>setHabitForm(f=>({...f,timesPerWeek:e.target.value}))} style={{flex:1,accentColor:C.orange}}/>
+                <span style={{fontFamily:"'Cinzel',serif",fontSize:16,color:C.orange,fontWeight:700,minWidth:30}}>{habitForm.timesPerWeek}x</span>
+              </div>
+            </div>
+            <button onClick={createHabit} style={{width:"100%",background:habitForm.name?C.orange:"#334155",border:"none",borderRadius:12,padding:"14px",color:habitForm.name?"#000":C.muted,fontFamily:"'Cinzel',serif",fontWeight:800,fontSize:13,cursor:habitForm.name?"pointer":"default",boxShadow:habitForm.name?`0 0 20px ${C.orange}44`:"none",transition:"all 0.3s"}}>🔗 Añadir hábito a soltar (+25 XP)</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Shared form styles
+const FS={
+  label:{display:"block",fontSize:9,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:6},
+  input:{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"},
+};
   const TEMPLATES=[
     {emoji:"⚖️",title:"Bajar 5 kg",desc:"Pérdida de peso saludable",target:"5",unit:"kg",weeks:"12",missions:[{text:"Pésate cada lunes",xp:10},{text:"Camina 30 min (3 veces)",xp:40},{text:"Sin comida procesada 3 días",xp:30},{text:"Verduras en cada comida",xp:20}]},
     {emoji:"🏃",title:"Correr 5 km",desc:"Resistencia cardiovascular",target:"5",unit:"km",weeks:"10",missions:[{text:"Corre 1 km sin parar",xp:30},{text:"Cardio 3 veces esta semana",xp:35},{text:"Duerme 8h para recuperación",xp:25},{text:"Hidrátate: 2L hoy",xp:10}]},
@@ -890,30 +1354,6 @@ function MetasScreen({customGoals,setCustomGoals,addXP}){
           </div>
         );
       })}
-      {customGoals.length===0&&(
-        <><div style={{fontSize:10,color:C.muted,letterSpacing:3,marginBottom:12}}>IDEAS POPULARES</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {TEMPLATES.map((t,i)=><div key={i} onClick={()=>{setForm({title:t.title,desc:t.desc,emoji:t.emoji,target:t.target,unit:t.unit,weeks:t.weeks});setShowForm(true);}} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",cursor:"pointer"}}><div style={{fontSize:24,marginBottom:8}}>{t.emoji}</div><div style={{fontSize:13,color:C.text,fontWeight:600,marginBottom:4}}>{t.title}</div><div style={{fontSize:11,color:C.muted}}>{t.weeks} semanas</div></div>)}
-        </div></>
-      )}
-      {showForm&&(
-        <div style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:970,backdropFilter:"blur(4px)"}}>
-          <div style={{background:C.card,borderRadius:"20px 20px 0 0",padding:"24px 20px 48px",width:"100%",maxWidth:520,animation:"slide-up 0.35s ease",maxHeight:"90vh",overflowY:"auto"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}><h3 style={{fontFamily:"'Cinzel',serif",fontSize:16,color:C.text}}>Nueva Meta</h3><button onClick={()=>setShowForm(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:22}}>✕</button></div>
-            <div style={{marginBottom:12}}><label style={{display:"block",fontSize:10,color:C.muted,letterSpacing:2,marginBottom:6}}>EMOJI</label><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>{["🎯","⚖️","🏃","💪","😴","📚","🧘","🏊","🚴","✈️","💰","🎸","🥗","🧠"].map(e=><button key={e} onClick={()=>setForm(f=>({...f,emoji:e}))} style={{width:34,height:34,fontSize:16,border:`1.5px solid ${form.emoji===e?C.green:C.border}`,borderRadius:8,background:form.emoji===e?C.green+"18":"transparent",cursor:"pointer"}}>{e}</button>)}</div></div>
-            <div style={{marginBottom:12}}><label style={{display:"block",fontSize:10,color:C.muted,letterSpacing:2,marginBottom:6}}>¿CUÁL ES TU META?</label><input style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}} placeholder="ej. Correr 5 km sin parar" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/></div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-              <div><label style={{display:"block",fontSize:10,color:C.muted,letterSpacing:2,marginBottom:6}}>META NUMÉRICA</label><input style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}} placeholder="ej. 5" value={form.target} onChange={e=>setForm(f=>({...f,target:e.target.value}))}/></div>
-              <div><label style={{display:"block",fontSize:10,color:C.muted,letterSpacing:2,marginBottom:6}}>UNIDAD</label><input style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}} placeholder="ej. kg, km, días" value={form.unit} onChange={e=>setForm(f=>({...f,unit:e.target.value}))}/></div>
-            </div>
-            <div style={{marginBottom:20}}><label style={{display:"block",fontSize:10,color:C.muted,letterSpacing:2,marginBottom:6}}>DURACIÓN: <span style={{color:C.green,fontWeight:700}}>{form.weeks} semanas</span></label><input type="range" min="2" max="52" value={form.weeks} onChange={e=>setForm(f=>({...f,weeks:e.target.value}))} style={{width:"100%",accentColor:C.green}}/></div>
-            <button onClick={createGoal} style={{width:"100%",background:form.title?C.green:"#334155",border:"none",borderRadius:12,padding:"14px",color:form.title?"#000":C.muted,fontFamily:"'Cinzel',serif",fontWeight:800,fontSize:13,cursor:form.title?"pointer":"default",boxShadow:form.title?`0 0 20px ${C.green}44`:"none",transition:"all 0.3s"}}>⚡ Crear meta (+30 XP)</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 function DarkDayScreen({archetype,playerName,onMission,onDismiss}){
   const[phase,setPhase]=useState(0);
   return(
@@ -943,6 +1383,7 @@ export default function App(){
   const[missions,setMissions]=useState(MISSIONS_DATA.map(m=>({...m,done:false})));
   const[extraMissions,setExtraMissions]=useState([]);
   const[customGoals,setCustomGoals]=useState([]);
+  const[badHabits,setBadHabits]=useState([]);
   const[mood,setMood]=useState(null);
   const[moodLog,setMoodLog]=useState([]);
   const[water,setWater]=useState(0);
@@ -981,6 +1422,7 @@ export default function App(){
       if(s.missions)setMissions(s.missions);
       if(s.extraMissions)setExtraMissions(s.extraMissions);
       if(s.customGoals)setCustomGoals(s.customGoals);
+      if(s.badHabits)setBadHabits(s.badHabits);
       if(s.water!==undefined)setWater(s.water);
       if(s.waterXPGiven)setWaterXPGiven(s.waterXPGiven);
       if(s.moodLog)setMoodLog(s.moodLog);
@@ -999,8 +1441,8 @@ export default function App(){
 
   useEffect(()=>{
     if(step<5&&!player)return;
-    save({profile,player,missions,extraMissions,customGoals,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,equipped,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect,lastOpenedDate});
-  },[profile,player,missions,extraMissions,customGoals,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,equipped,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect,lastOpenedDate]);
+    save({profile,player,missions,extraMissions,customGoals,badHabits,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,equipped,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect,lastOpenedDate});
+  },[profile,player,missions,extraMissions,customGoals,badHabits,water,waterXPGiven,moodLog,attrs,totalXP,epicDone,equipped,unlockedAchievements,totalMissionsCompleted,waterCompleted,moodDays,dayPerfect,lastOpenedDate]);
 
   // AUTO NEW DAY DETECTION — runs on every app open
   useEffect(()=>{
@@ -1552,7 +1994,7 @@ export default function App(){
         )}
 
         {tab==="misiones"&&<MissionsScreen missions={missions} completeMission={completeMission} completedAnim={completedAnim} attrs={attrs} arc={arc} water={water} addXP={addXP} extraMissions={extraMissions} setExtraMissions={setExtraMissions}/>}
-        {tab==="metas"&&<MetasScreen customGoals={customGoals} setCustomGoals={setCustomGoals} addXP={addXP}/>}
+        {tab==="metas"&&<MetasScreen customGoals={customGoals} setCustomGoals={setCustomGoals} addXP={addXP} badHabits={badHabits} setBadHabits={setBadHabits}/>}
         {tab==="artefactos"&&(
           <div style={{maxWidth:660,margin:"0 auto",padding:"0 0 60px"}}>
             <div style={{padding:"0 14px"}}><p style={{fontSize:13,color:C.muted,marginBottom:16,marginTop:8}}>Equipa artefactos para potenciar tus atributos. Se desbloquean al subir de nivel.</p><ArsenalScreen level={player.level} equipped={equipped} setEquipped={setEquipped} addXP={addXP} attrs={attrs}/></div>
