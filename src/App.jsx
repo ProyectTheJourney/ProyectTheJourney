@@ -816,6 +816,57 @@ function AchievementsScreen({stats,unlockedAchievements}){
     </div>
   );
 }
+// ── GOAL WEEKLY PLANS — pure data, outside component ─────────────
+const GOAL_WEEKLY_PLANS={
+  "Bajar 5 kg":[
+    [{text:"Pésate hoy y anota tu punto de partida",xp:15},{text:"Camina 20 min sin parar",xp:25},{text:"Sin refresco ni jugo todo el día",xp:30},{text:"Verduras en una comida",xp:20}],
+    [{text:"Camina 30 min (2 veces esta semana)",xp:30},{text:"Sin comida procesada 3 días",xp:35},{text:"Proteína en cada comida",xp:30},{text:"Duerme 7h mínimo",xp:20}],
+    [{text:"Entrena fuerza 2 días",xp:40},{text:"Sin azúcar añadida 5 días",xp:40},{text:"Agua antes de cada comida",xp:25},{text:"Camina 10 min después de comer",xp:25}],
+    [{text:"Entrena 3 días esta semana",xp:45},{text:"Prepara tus comidas del día",xp:35},{text:"Sin snacks nocturnos 5 días",xp:40},{text:"Registra lo que comes 3 días",xp:25}],
+  ],
+  "Correr 5 km":[
+    [{text:"Corre 1 min, camina 2 min · 6 veces",xp:25},{text:"Estira 10 min después de correr",xp:15},{text:"Hidrátate bien el día anterior",xp:10},{text:"Corre 3 días esta semana",xp:30}],
+    [{text:"Corre 3 min seguidos sin parar",xp:30},{text:"Corre 3 días esta semana",xp:35},{text:"Añade 500m a tu distancia habitual",xp:30},{text:"Duerme 8h para recuperación",xp:20}],
+    [{text:"Corre 10 min sin parar",xp:40},{text:"Carrera larga: tu distancia máxima",xp:40},{text:"Corre 4 días esta semana",xp:35},{text:"Prueba un nuevo recorrido",xp:20}],
+    [{text:"Corre 3 km sin parar",xp:55},{text:"Corre 4 km sin parar",xp:65},{text:"¡COMPLETA LOS 5 KM!",xp:100},{text:"Celebra y registra tu tiempo",xp:15}],
+  ],
+  "Ganar músculo":[
+    [{text:"Entrena: sentadillas + press banca",xp:35},{text:"Proteína en cada comida",xp:25},{text:"Duerme 8h",xp:20},{text:"Sube de peso en 1 ejercicio",xp:30}],
+    [{text:"Entrena fuerza 3 días",xp:45},{text:"Come +200 kcal de tu mantenimiento",xp:20},{text:"Proteína 1.6g por kg de peso",xp:25},{text:"Foto de progreso mensual",xp:15}],
+    [{text:"Alcanza tu récord en sentadilla",xp:55},{text:"Entrena 4 días esta semana",xp:50},{text:"Sin fallar ninguna sesión",xp:40},{text:"Evalúa ganancia con medidas",xp:20}],
+    [{text:"4 días de entrenamiento esta semana",xp:55},{text:"Récord personal en press banca",xp:60},{text:"Foto comparativa mes 1 vs ahora",xp:20},{text:"Diseña tu plan del próximo mes",xp:15}],
+  ],
+  "Mejorar sueño":[
+    [{text:"Sin pantallas 30 min antes de dormir",xp:25},{text:"Duerme a la misma hora 3 días",xp:30},{text:"Cuarto oscuro esta noche",xp:15},{text:"Sin cafeína después de las 3pm",xp:20}],
+    [{text:"Sin pantallas 1h antes de dormir",xp:35},{text:"Duerme a la misma hora 5 días",xp:40},{text:"Lee 10 min antes de dormir",xp:25},{text:"Sin alarma un día — despierta natural",xp:30}],
+    [{text:"7 días seguidos durmiendo 7+ horas",xp:60},{text:"Evalúa energía vs semana 1",xp:20},{text:"Rutina de sueño sin excepciones",xp:40},{text:"Comparte tu rutina con alguien",xp:10}],
+  ],
+  "Leer 12 libros":[
+    [{text:"Lee 15 páginas hoy",xp:15},{text:"Lee antes de dormir (no celular)",xp:20},{text:"Lee 20 min sin distracciones",xp:20},{text:"Anota algo que aprendiste",xp:15}],
+    [{text:"Lee 30 min seguidos",xp:25},{text:"Termina el capítulo actual",xp:20},{text:"Lee en un lugar diferente",xp:15},{text:"Recomienda algo del libro",xp:15}],
+    [{text:"Lee todos los días esta semana",xp:35},{text:"Termina tu libro actual",xp:50},{text:"Elige tu próximo libro",xp:15},{text:"Escribe 3 ideas del libro terminado",xp:20}],
+    [{text:"Lee 45 min sin parar",xp:35},{text:"Sin redes mientras lees",xp:20},{text:"Libro nuevo: lee el primer capítulo",xp:25},{text:"Lleva el libro contigo todo el día",xp:10}],
+  ],
+  "Meditar 30 días":[
+    [{text:"Medita 5 min hoy (solo empieza)",xp:20},{text:"3 días seguidos de meditación",xp:30},{text:"Encuentra tu lugar y hora fija",xp:15},{text:"Medita antes de revisar el celular",xp:25}],
+    [{text:"7 días seguidos — 1 semana completa",xp:50},{text:"Sube a 10 min de meditación",xp:30},{text:"Meditación sin guía: solo respira",xp:25},{text:"Nota 3 cambios en tu nivel de estrés",xp:20}],
+    [{text:"14 días seguidos",xp:60},{text:"Meditación de 15 min sin distracción",xp:35},{text:"21 días — el hábito ya está formado",xp:70},{text:"30 días COMPLETOS — ¡Leyenda!",xp:100}],
+  ],
+  "_default":[
+    [{text:"Define tu primer paso concreto",xp:20},{text:"Toma la primera acción hoy",xp:35},{text:"Registra tu punto de partida",xp:15},{text:"Comparte tu meta con alguien",xp:15}],
+    [{text:"Mantén el ritmo esta semana",xp:25},{text:"Un paso más difícil que la semana pasada",xp:35},{text:"Registra tu progreso",xp:20},{text:"Identifica qué te frena y actúa",xp:30}],
+    [{text:"Supera tu mejor semana hasta ahora",xp:40},{text:"Sin excusas esta semana",xp:35},{text:"Evalúa cuánto has avanzado",xp:20},{text:"Planifica la siguiente etapa",xp:20}],
+  ],
+};
+
+function getWeekMissions(templateId, week){
+  const plans=GOAL_WEEKLY_PLANS[templateId]||GOAL_WEEKLY_PLANS["_default"];
+  const idx=Math.min(week, plans.length-1);
+  // Cycle through plans for long goals
+  const cycleIdx=week%plans.length;
+  return (plans[idx]||plans[cycleIdx]).map(m=>({...m,done:false}));
+}
+
 function MetasScreen({customGoals,setCustomGoals,addXP,badHabits,setBadHabits}){
   const [activeTab,setActiveTab]=useState("metas");
   const [showGoalForm,setShowGoalForm]=useState(false);
@@ -823,66 +874,14 @@ function MetasScreen({customGoals,setCustomGoals,addXP,badHabits,setBadHabits}){
   const [goalForm,setGoalForm]=useState({title:"",emoji:"🎯",target:"",unit:"",weeks:8});
   const [habitForm,setHabitForm]=useState({name:"",trigger:"",replacement:"",emoji:"📱"});
 
-  // ── GOAL TEMPLATES — 4 missions per week, easy→hard ───────────
+  // ── GOAL TEMPLATES — metadata only, no functions ───────────
   const GOAL_TEMPLATES=[
-    {emoji:"⚖️",title:"Bajar 5 kg",target:"5",unit:"kg",weeks:12,
-     weeklyMissions:(week)=>{
-       const plans=[
-         [{text:"Pésate hoy y anota tu punto de partida",xp:15},{text:"Camina 20 min sin parar",xp:25},{text:"Sin refresco ni jugo todo el día",xp:30},{text:"Verduras en una comida",xp:20}],
-         [{text:"Camina 30 min (2 veces esta semana)",xp:30},{text:"Sin comida procesada 3 días",xp:35},{text:"Proteína en cada comida",xp:30},{text:"Duerme 7h mínimo",xp:20}],
-         [{text:"Entrena fuerza 2 días",xp:40},{text:"Sin azúcar añadida 5 días",xp:40},{text:"Agua antes de cada comida",xp:25},{text:"Camina 10 min después de comer",xp:25}],
-         [{text:"Entrena 3 días esta semana",xp:45},{text:"Prepara tus comidas del día",xp:35},{text:"Sin snacks nocturnos 5 días",xp:40},{text:"Registra lo que comes 3 días",xp:25}],
-       ];
-       return plans[Math.min(week,plans.length-1)].map(m=>({...m,done:false}));
-     }},
-    {emoji:"🏃",title:"Correr 5 km",target:"5",unit:"km",weeks:10,
-     weeklyMissions:(week)=>{
-       const plans=[
-         [{text:"Corre 1 min, camina 2 min · 6 veces",xp:25},{text:"Estira 10 min después de correr",xp:15},{text:"Hidrátate bien el día anterior",xp:10},{text:"Corre 3 días esta semana",xp:30}],
-         [{text:"Corre 3 min seguidos sin parar",xp:30},{text:"Corre 3 días esta semana",xp:35},{text:"Añade 500m a tu distancia habitual",xp:30},{text:"Duerme 8h para recuperación",xp:20}],
-         [{text:"Corre 10 min sin parar",xp:40},{text:"Carrera larga: tu distancia máxima",xp:40},{text:"Corre 4 días esta semana",xp:35},{text:"Prueba un nuevo recorrido",xp:20}],
-         [{text:"Corre 3 km sin parar",xp:55},{text:"Corre 4 km sin parar",xp:65},{text:"¡COMPLETA LOS 5 KM!",xp:100},{text:"Celebra y registra tu tiempo",xp:15}],
-       ];
-       return plans[Math.min(week,plans.length-1)].map(m=>({...m,done:false}));
-     }},
-    {emoji:"💪",title:"Ganar músculo",target:"3",unit:"kg",weeks:16,
-     weeklyMissions:(week)=>{
-       const plans=[
-         [{text:"Entrena: sentadillas + press banca",xp:35},{text:"Proteína en cada comida",xp:25},{text:"Duerme 8h",xp:20},{text:"Sube de peso en 1 ejercicio",xp:30}],
-         [{text:"Entrena fuerza 3 días",xp:45},{text:"Come +200 kcal de tu mantenimiento",xp:20},{text:"Proteína 1.6g por kg de peso",xp:25},{text:"Foto de progreso mensual",xp:15}],
-         [{text:"Alcanza tu récord en sentadilla",xp:55},{text:"Entrena 4 días esta semana",xp:50},{text:"Sin fallar ninguna sesión",xp:40},{text:"Evalúa ganancia (medidas)",xp:20}],
-       ];
-       return plans[Math.min(week,plans.length-1)].map(m=>({...m,done:false}));
-     }},
-    {emoji:"😴",title:"Mejorar sueño",target:"8",unit:"h/noche",weeks:6,
-     weeklyMissions:(week)=>{
-       const plans=[
-         [{text:"Sin pantallas 30 min antes de dormir",xp:25},{text:"Duerme a la misma hora 3 días",xp:30},{text:"Cuarto oscuro esta noche",xp:15},{text:"Sin cafeína después de las 3pm",xp:20}],
-         [{text:"Sin pantallas 1h antes de dormir",xp:35},{text:"Duerme a la misma hora 5 días",xp:40},{text:"Rutina: leer 10 min antes de dormir",xp:25},{text:"Sin alarma un día — despierta natural",xp:30}],
-         [{text:"7 días seguidos durmiendo 7+ horas",xp:60},{text:"Evalúa energía vs semana 1 (1-10)",xp:20},{text:"Rutina de sueño sin excepciones",xp:40},{text:"Comparte tu rutina con alguien",xp:10}],
-       ];
-       return plans[Math.min(week,plans.length-1)].map(m=>({...m,done:false}));
-     }},
-    {emoji:"📚",title:"Leer 12 libros",target:"12",unit:"libros",weeks:52,
-     weeklyMissions:(week)=>{
-       const w=week%4;
-       const plans=[
-         [{text:"Lee 15 páginas hoy",xp:15},{text:"Lee antes de dormir (no celular)",xp:20},{text:"Lee 20 min sin distracciones",xp:20},{text:"Anota algo que aprendiste",xp:15}],
-         [{text:"Lee 30 min seguidos",xp:25},{text:"Termina el capítulo actual",xp:20},{text:"Lee en un lugar diferente",xp:15},{text:"Recomienda algo del libro",xp:15}],
-         [{text:"Lee todos los días esta semana",xp:35},{text:"Termina tu libro actual",xp:50},{text:"Elige tu próximo libro",xp:15},{text:"Escribe 3 ideas del libro terminado",xp:20}],
-         [{text:"Lee 45 min sin parar",xp:35},{text:"Sin redes mientras lees",xp:20},{text:"Libro nuevo: lee el primer capítulo",xp:25},{text:"Lleva el libro contigo todo el día",xp:10}],
-       ];
-       return plans[w].map(m=>({...m,done:false}));
-     }},
-    {emoji:"🧘",title:"Meditar 30 días",target:"30",unit:"días",weeks:5,
-     weeklyMissions:(week)=>{
-       const plans=[
-         [{text:"Medita 5 min hoy (solo empieza)",xp:20},{text:"3 días seguidos de meditación",xp:30},{text:"Encuentra tu lugar y hora fija",xp:15},{text:"Medita antes de revisar el celular",xp:25}],
-         [{text:"7 días seguidos — 1 semana completa",xp:50},{text:"Sube a 10 min de meditación",xp:30},{text:"Meditación sin guía: solo respira",xp:25},{text:"Nota 3 cambios en tu nivel de estrés",xp:20}],
-         [{text:"14 días seguidos",xp:60},{text:"Meditación de 15 min sin distracción",xp:35},{text:"21 días — el hábito ya está formado",xp:70},{text:"30 días COMPLETOS — ¡Leyenda!",xp:100}],
-       ];
-       return plans[Math.min(week,plans.length-1)].map(m=>({...m,done:false}));
-     }},
+    {emoji:"⚖️",title:"Bajar 5 kg",       target:"5", unit:"kg",        weeks:12},
+    {emoji:"🏃",title:"Correr 5 km",       target:"5", unit:"km",        weeks:10},
+    {emoji:"💪",title:"Ganar músculo",     target:"3", unit:"kg",        weeks:16},
+    {emoji:"😴",title:"Mejorar sueño",     target:"8", unit:"h/noche",   weeks:6},
+    {emoji:"📚",title:"Leer 12 libros",    target:"12",unit:"libros",    weeks:52},
+    {emoji:"🧘",title:"Meditar 30 días",   target:"30",unit:"días",      weeks:5},
   ];
 
   // ── BAD HABIT EXAMPLES ─────────────────────────────────────────
@@ -898,17 +897,16 @@ function MetasScreen({customGoals,setCustomGoals,addXP,badHabits,setBadHabits}){
   function createGoal(){
     if(!goalForm.title)return;
     const tmpl=GOAL_TEMPLATES.find(t=>t.title===goalForm.title)||GOAL_TEMPLATES[0];
+    const firstMissions=getWeekMissions(tmpl.title, 0);
     const g={
-      id:Date.now(),title:goalForm.title,emoji:goalForm.emoji,
-      target:goalForm.target,unit:goalForm.unit,weeks:goalForm.weeks,
-      currentWeek:0,weekMissions:tmpl.weeklyMissions(0),
-      xpTotal:0,xpEarned:0,completedWeeks:0,
+      id:Date.now(),title:tmpl.title,emoji:tmpl.emoji,
+      target:goalForm.target||tmpl.target,unit:goalForm.unit||tmpl.unit,weeks:tmpl.weeks,
+      currentWeek:0,weekMissions:firstMissions,
+      xpTotal:firstMissions.reduce((s,m)=>s+m.xp,0),
+      xpEarned:0,completedWeeks:0,
       createdAt:new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long"}),
-      getNextWeek:null, // stored via template id
       templateId:tmpl.title,
     };
-    // Calculate xpTotal for first week
-    g.xpTotal=g.weekMissions.reduce((s,m)=>s+m.xp,0);
     setCustomGoals(prev=>[...prev,g]);
     setShowGoalForm(false);
     setGoalForm({title:"",emoji:"🎯",target:"",unit:"",weeks:8});
@@ -923,15 +921,8 @@ function MetasScreen({customGoals,setCustomGoals,addXP,badHabits,setBadHabits}){
       const allDone=updated.every(m=>m.done);
       addXP(xpGain);
       if(allDone){
-        // Advance to next week after a moment
-        const tmpl=GOAL_TEMPLATES.find(t=>t.title===g.templateId);
         const nextWeek=g.currentWeek+1;
-        const nextMissions=tmpl?tmpl.weeklyMissions(nextWeek):[
-          {text:"Continúa con tu meta",xp:30,done:false},
-          {text:"Un paso más esta semana",xp:35,done:false},
-          {text:"Registra tu progreso",xp:20,done:false},
-          {text:"Comparte tu avance",xp:15,done:false},
-        ];
+        const nextMissions=getWeekMissions(g.templateId, nextWeek);
         setTimeout(()=>{
           setCustomGoals(prev2=>prev2.map(g2=>g2.id!==gid?g2:{
             ...g2,currentWeek:nextWeek,weekMissions:nextMissions,
